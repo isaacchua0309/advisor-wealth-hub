@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -55,6 +54,11 @@ export function CreateClientForm({ onSubmit, isPending, onCancel }: CreateClient
       status: "active",
       policy_number: "",
       value: null,
+      payment_structure_type: 'regular_premium',
+      commission_rate: null,
+      first_year_commission: null,
+      annual_ongoing_commission: null,
+      policy_duration: null
     }]);
   };
 

@@ -11,6 +11,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useClients } from "@/hooks/useClients";
+import { useToast } from "@/hooks/use-toast";
 import type { Policy } from "@/types/policy";
 
 interface DeletePolicyDialogProps {
@@ -21,15 +22,25 @@ interface DeletePolicyDialogProps {
 
 export function DeletePolicyDialog({ policy, open, onOpenChange }: DeletePolicyDialogProps) {
   const { deletePolicy } = useClients();
+  const { toast } = useToast();
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
       await deletePolicy.mutateAsync(policy.id);
+      toast({
+        title: "Policy Deleted",
+        description: `${policy.policy_name} has been successfully removed`,
+      });
       onOpenChange(false);
     } catch (error) {
       console.error("Error deleting policy:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete policy. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsDeleting(false);
     }
