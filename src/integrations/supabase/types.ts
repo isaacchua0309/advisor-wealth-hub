@@ -100,10 +100,15 @@ export type Database = {
       }
       policies: {
         Row: {
+          annual_ongoing_commission: number | null
           client_id: string
+          commission_rate: number | null
           created_at: string
           end_date: string | null
+          first_year_commission: number | null
           id: string
+          payment_structure_type: string
+          policy_duration: number | null
           policy_name: string
           policy_number: string | null
           policy_type: string
@@ -116,10 +121,15 @@ export type Database = {
           value: number | null
         }
         Insert: {
+          annual_ongoing_commission?: number | null
           client_id: string
+          commission_rate?: number | null
           created_at?: string
           end_date?: string | null
+          first_year_commission?: number | null
           id?: string
+          payment_structure_type: string
+          policy_duration?: number | null
           policy_name: string
           policy_number?: string | null
           policy_type: string
@@ -132,10 +142,15 @@ export type Database = {
           value?: number | null
         }
         Update: {
+          annual_ongoing_commission?: number | null
           client_id?: string
+          commission_rate?: number | null
           created_at?: string
           end_date?: string | null
+          first_year_commission?: number | null
           id?: string
+          payment_structure_type?: string
+          policy_duration?: number | null
           policy_name?: string
           policy_number?: string | null
           policy_type?: string

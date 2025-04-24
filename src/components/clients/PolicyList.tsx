@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Policy } from "@/types/policy";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -98,6 +97,36 @@ export function PolicyList({ policies, clientId }: PolicyListProps) {
                     <p className="text-muted-foreground">Status</p>
                     <p>{policy.status || "N/A"}</p>
                   </div>
+
+                  <div>
+                    <p className="text-muted-foreground">Payment Structure</p>
+                    <p>{policy.payment_structure_type.split('_').map(word => 
+                      word.charAt(0).toUpperCase() + word.slice(1)
+                    ).join(' ')}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-muted-foreground">Commission Rate</p>
+                    <p>{policy.commission_rate ? `${policy.commission_rate}%` : 'N/A'}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-muted-foreground">First Year Commission</p>
+                    <p>{policy.first_year_commission ? 
+                      `$${policy.first_year_commission.toLocaleString()}` : 'N/A'}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-muted-foreground">Annual Ongoing Commission</p>
+                    <p>{policy.annual_ongoing_commission ? 
+                      `$${policy.annual_ongoing_commission.toLocaleString()}` : 'N/A'}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-muted-foreground">Policy Duration</p>
+                    <p>{policy.policy_duration ? 
+                      `${policy.policy_duration} years` : 'N/A'}</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -105,14 +134,12 @@ export function PolicyList({ policies, clientId }: PolicyListProps) {
         </div>
       )}
 
-      {/* Add Policy Dialog */}
       <AddPolicyDialog
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
         clientId={clientId}
       />
 
-      {/* Edit Policy Dialog */}
       {policyToEdit && (
         <EditPolicyDialog
           policy={policyToEdit}
@@ -121,7 +148,6 @@ export function PolicyList({ policies, clientId }: PolicyListProps) {
         />
       )}
 
-      {/* Delete Policy Dialog */}
       {policyToDelete && (
         <DeletePolicyDialog
           policy={policyToDelete}

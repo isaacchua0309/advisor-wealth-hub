@@ -1,4 +1,3 @@
-
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,12 +7,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
-import type { CreatePolicyInput } from "@/types/policy";
 import { Label } from "@/components/ui/label";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import type { CreatePolicyInput } from "@/types/policy";
+import { calculateOngoingCommission } from "@/types/policy";
 
 interface PolicyFormGroupProps {
   policy: CreatePolicyInput;
@@ -24,6 +29,21 @@ interface PolicyFormGroupProps {
 
 export function PolicyFormGroup({ policy, onChange, onRemove, index }: PolicyFormGroupProps) {
   const [isOpen, setIsOpen] = useState(true);
+
+  useEffect(() => {
+    if (policy.premium && policy.commission_rate && policy.first_year_commission) {
+      const totalCommission = policy.premium * (policy.commission_rate / 100);
+      const ongoingCommission = calculateOngoingCommission(
+        totalCommission,
+        policy.first_year_commission,
+        policy.payment_structure_type
+      );
+      
+      if (policy.annual_ongoing_commission !== ongoingCommission) {
+        handleChange('annual_ongoing_commission', ongoingCommission);
+      }
+    }
+  }, [policy.premium, policy.commission_rate, policy.first_year_commission, policy.payment_structure_type]);
 
   const handleChange = (field: string, value: any) => {
     onChange({
@@ -171,6 +191,79 @@ export function PolicyFormGroup({ policy, onChange, onRemove, index }: PolicyFor
                 <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Label htmlFor={`payment-structure-${index}`}>Payment Structure Type</Label>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Select how the premium payments are structured over time</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <Select
+              value={policy.payment_structure_type}
+              onValueChange={(value) => handleChange("payment_structure_type", value)}
+            >
+              <SelectTrigger id={`payment-structure-${index}`}>
+                <SelectValue placeholder="Select payment structure" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="single_premium">Single Premium</SelectItem>
+                <SelectItem value="one_year_term">One-Year Term Policy</SelectItem>
+                <SelectItem value="regular_premium">Regular Premium Policy</SelectItem>
+                <SelectItem value="five_year_premium">5-Year Premium Payment</SelectItem>
+                <SelectItem value="ten_year_premium">10-Year Premium Payment</SelectItem>
+                <SelectItem value="lifetime_premium">Lifetime Premium Payment</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor={`commission-rate-${index}`}>Commission Rate (%)</Label>
+            <Input
+              id={`commission-rate-${index}`}
+              type="number"
+              placeholder="Commission rate"
+              value={policy.commission_rate === null ? "" : policy.commission_rate}
+              onChange={(e) => handleNumericChange("commission_rate", e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor={`first-year-commission-${index}`}>First Year Commission ($)</Label>
+            <Input
+              id={`first-year-commission-${index}`}
+              type="number"
+              placeholder="First year commission"
+              value={policy.first_year_commission === null ? "" : policy.first_year_commission}
+              onChange={(e) => handleNumericChange("first_year_commission", e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor={`annual-ongoing-commission-${index}`}>Annual Ongoing Commission ($)</Label>
+            <Input
+              id={`annual-ongoing-commission-${index}`}
+              type="number"
+              placeholder="Calculated automatically"
+              value={policy.annual_ongoing_commission === null ? "" : policy.annual_ongoing_commission}
+              disabled
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor={`policy-duration-${index}`}>Policy Duration (years)</Label>
+            <Input
+              id={`policy-duration-${index}`}
+              type="number"
+              placeholder="Policy duration"
+              value={policy.policy_duration === null ? "" : policy.policy_duration}
+              onChange={(e) => handleNumericChange("policy_duration", e.target.value)}
+            />
           </div>
         </div>
       </CollapsibleContent>

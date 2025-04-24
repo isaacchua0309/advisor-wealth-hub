@@ -13,6 +13,11 @@ export interface Policy {
   status: string | null;
   created_at: string;
   updated_at: string;
+  payment_structure_type: 'single_premium' | 'one_year_term' | 'regular_premium' | 'five_year_premium' | 'ten_year_premium' | 'lifetime_premium';
+  commission_rate: number | null;
+  first_year_commission: number | null;
+  annual_ongoing_commission: number | null;
+  policy_duration: number | null;
 }
 
 export interface CreatePolicyInput {
@@ -25,4 +30,33 @@ export interface CreatePolicyInput {
   start_date?: string | null;
   end_date?: string | null;
   status?: string | null;
+  payment_structure_type: 'single_premium' | 'one_year_term' | 'regular_premium' | 'five_year_premium' | 'ten_year_premium' | 'lifetime_premium';
+  commission_rate?: number | null;
+  first_year_commission?: number | null;
+  annual_ongoing_commission?: number | null;
+  policy_duration?: number | null;
 }
+
+// Helper function to calculate ongoing commission based on payment structure
+export const calculateOngoingCommission = (
+  totalCommission: number,
+  firstYearCommission: number,
+  paymentStructureType: Policy['payment_structure_type']
+): number => {
+  const remainingCommission = totalCommission - firstYearCommission;
+
+  switch (paymentStructureType) {
+    case 'single_premium':
+    case 'one_year_term':
+      return 0;
+    case 'regular_premium':
+      return remainingCommission / 5;
+    case 'five_year_premium':
+      return remainingCommission / 4;
+    case 'ten_year_premium':
+    case 'lifetime_premium':
+      return remainingCommission / 5;
+    default:
+      return 0;
+  }
+};
