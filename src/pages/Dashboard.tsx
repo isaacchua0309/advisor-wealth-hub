@@ -1,44 +1,45 @@
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DollarSign, Users, FileText, Calendar } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer 
+} from "recharts";
+import { useDashboard } from "@/hooks/useDashboard";
+import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
+import { format } from "date-fns";
 import { useState } from "react";
-
-// Mock data for charts
-const commissionData = [
-  { month: "Jan", amount: 12400 },
-  { month: "Feb", amount: 9800 },
-  { month: "Mar", amount: 15600 },
-  { month: "Apr", amount: 18200 },
-  { month: "May", amount: 14300 },
-  { month: "Jun", amount: 21000 },
-];
-
-const policyData = [
-  { type: "Life", count: 42 },
-  { type: "Health", count: 28 },
-  { type: "Investment", count: 15 },
-  { type: "General", count: 8 },
-];
-
-const recentClients = [
-  { id: "1", name: "Sarah Chen", policies: 3, value: "S$350,000" },
-  { id: "2", name: "Michael Tan", policies: 2, value: "S$210,000" },
-  { id: "3", name: "Priya Kumar", policies: 1, value: "S$125,000" },
-  { id: "4", name: "David Wong", policies: 4, value: "S$480,000" },
-];
-
-const upcomingTasks = [
-  { id: "1", title: "Policy Review with Sarah Chen", date: "Today, 2:00 PM" },
-  { id: "2", title: "Follow-up with Michael Tan", date: "Tomorrow, 10:30 AM" },
-  { id: "3", title: "Send proposal to Priya Kumar", date: "Apr 26, 3:00 PM" },
-  { id: "4", title: "Renewal discussion with David Wong", date: "Apr 28, 11:00 AM" },
-];
 
 export default function Dashboard() {
   const [period, setPeriod] = useState("month");
-  
+  const { 
+    totalCommission,
+    activeClients,
+    activePolicies,
+    pendingTasks,
+    monthlyCommission,
+    pipelineData,
+    upcomingTasks,
+    recentClients,
+    isLoading,
+  } = useDashboard();
+
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -56,7 +57,7 @@ export default function Dashboard() {
             </div>
             <div>
               <p className="stats-label">Total Commission</p>
-              <h3 className="stats-value">S$91,400</h3>
+              <h3 className="stats-value">S${totalCommission?.toLocaleString() || '0'}</h3>
             </div>
           </div>
         </Card>
@@ -67,7 +68,7 @@ export default function Dashboard() {
             </div>
             <div>
               <p className="stats-label">Active Clients</p>
-              <h3 className="stats-value">124</h3>
+              <h3 className="stats-value">{activeClients || 0}</h3>
             </div>
           </div>
         </Card>
@@ -78,7 +79,7 @@ export default function Dashboard() {
             </div>
             <div>
               <p className="stats-label">Active Policies</p>
-              <h3 className="stats-value">93</h3>
+              <h3 className="stats-value">{activePolicies || 0}</h3>
             </div>
           </div>
         </Card>
@@ -89,7 +90,7 @@ export default function Dashboard() {
             </div>
             <div>
               <p className="stats-label">Pending Tasks</p>
-              <h3 className="stats-value">12</h3>
+              <h3 className="stats-value">{pendingTasks || 0}</h3>
             </div>
           </div>
         </Card>
@@ -100,7 +101,7 @@ export default function Dashboard() {
           <CardHeader>
             <CardTitle>Commission Overview</CardTitle>
             <CardDescription>Your commission earnings over time</CardDescription>
-            <Tabs defaultValue="month" className="w-full" onValueChange={setPeriod}>
+            <Tabs defaultValue={period} className="w-full" onValueChange={setPeriod}>
               <TabsList className="grid w-full max-w-xs grid-cols-3">
                 <TabsTrigger value="week">Week</TabsTrigger>
                 <TabsTrigger value="month">Month</TabsTrigger>
@@ -110,7 +111,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={commissionData}>
+              <BarChart data={monthlyCommission}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="month" />
                 <YAxis 
@@ -139,57 +140,25 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Leads</p>
-                  <div className="flex items-baseline space-x-2">
-                    <span className="text-2xl font-bold">24</span>
-                    <span className="text-xs text-muted-foreground">clients</span>
+              {pipelineData && Object.entries(pipelineData).map(([stage, count]) => (
+                <div key={stage} className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">{stage}</p>
+                    <div className="flex items-baseline space-x-2">
+                      <span className="text-2xl font-bold">{count}</span>
+                      <span className="text-xs text-muted-foreground">clients</span>
+                    </div>
+                  </div>
+                  <div className="h-2 bg-gray-100 rounded-full w-full max-w-[180px]">
+                    <div 
+                      className="h-2 bg-primary rounded-full" 
+                      style={{ 
+                        width: `${(count / Math.max(...Object.values(pipelineData))) * 100}%` 
+                      }}
+                    />
                   </div>
                 </div>
-                <div className="h-2 bg-gray-100 rounded-full w-full max-w-[180px]">
-                  <div className="h-2 bg-crm-gray rounded-full w-[100%]"></div>
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Contacted</p>
-                  <div className="flex items-baseline space-x-2">
-                    <span className="text-2xl font-bold">18</span>
-                    <span className="text-xs text-muted-foreground">clients</span>
-                  </div>
-                </div>
-                <div className="h-2 bg-gray-100 rounded-full w-full max-w-[180px]">
-                  <div className="h-2 bg-crm-warning rounded-full w-[75%]"></div>
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Proposal</p>
-                  <div className="flex items-baseline space-x-2">
-                    <span className="text-2xl font-bold">12</span>
-                    <span className="text-xs text-muted-foreground">clients</span>
-                  </div>
-                </div>
-                <div className="h-2 bg-gray-100 rounded-full w-full max-w-[180px]">
-                  <div className="h-2 bg-crm-secondary rounded-full w-[50%]"></div>
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Closed</p>
-                  <div className="flex items-baseline space-x-2">
-                    <span className="text-2xl font-bold">8</span>
-                    <span className="text-xs text-muted-foreground">clients</span>
-                  </div>
-                </div>
-                <div className="h-2 bg-gray-100 rounded-full w-full max-w-[180px]">
-                  <div className="h-2 bg-crm-success rounded-full w-[33%]"></div>
-                </div>
-              </div>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -203,14 +172,14 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentClients.map((client) => (
+              {recentClients?.map((client) => (
                 <div key={client.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
                   <div>
                     <p className="font-medium">{client.name}</p>
                     <p className="text-sm text-muted-foreground">{client.policies} Policies</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium">{client.value}</p>
+                    <p className="font-medium">S${client.value.toLocaleString()}</p>
                     <p className="text-sm text-muted-foreground">Total Value</p>
                   </div>
                 </div>
@@ -226,15 +195,17 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {upcomingTasks.map((task) => (
+              {upcomingTasks?.map((task) => (
                 <div key={task.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
                   <div>
                     <p className="font-medium">{task.title}</p>
-                    <p className="text-sm text-muted-foreground">{task.date}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {task.due_date ? format(new Date(task.due_date), 'MMM dd, yyyy') : 'No due date'}
+                    </p>
                   </div>
                   <div>
                     <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-primary/10 text-primary">
-                      Upcoming
+                      {task.priority || 'Normal'}
                     </span>
                   </div>
                 </div>
