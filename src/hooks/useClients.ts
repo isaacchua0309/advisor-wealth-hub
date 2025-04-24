@@ -169,6 +169,15 @@ export function useClients() {
   // Delete client
   const deleteClient = useMutation({
     mutationFn: async (id: string) => {
+      // First delete any policies associated with this client
+      const { error: policiesError } = await supabase
+        .from("policies")
+        .delete()
+        .eq("client_id", id);
+      
+      if (policiesError) throw policiesError;
+      
+      // Then delete the client
       const { error } = await supabase
         .from("clients")
         .delete()
@@ -238,6 +247,96 @@ export function useClients() {
     }
   };
 
+  // Add new policy for a client
+  const addPolicy = useMutation({
+    mutationFn: async ({ 
+      clientId, 
+      policy 
+    }: { 
+      clientId: string, 
+      policy: CreatePolicyInput 
+    }) => {
+      const { data, error } = await supabase
+        .from("policies")
+        .insert([{
+          ...policy,
+          client_id: clientId,
+          user_id: user?.id
+        }])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data as Policy;
+    },
+    onSuccess: (data) => {
+      // Invalidate queries to refresh policy data
+      queryClient.invalidateQueries({ queryKey: ["policies"] });
+      queryClient.invalidateQueries({ queryKey: ["policies", data.client_id] });
+      
+      toast({
+        title: "Policy Added",
+        description: "New policy has been added successfully",
+      });
+    },
+  });
+
+  // Update policy
+  const updatePolicy = useMutation({
+    mutationFn: async ({ 
+      id, 
+      data 
+    }: { 
+      id: string, 
+      data: Partial<Policy> 
+    }) => {
+      const { data: updatedPolicy, error } = await supabase
+        .from("policies")
+        .update(data)
+        .eq("id", id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return updatedPolicy as Policy;
+    },
+    onSuccess: (data) => {
+      // Update policies in cache
+      queryClient.invalidateQueries({ queryKey: ["policies"] });
+      queryClient.invalidateQueries({ queryKey: ["policies", data.client_id] });
+      
+      toast({
+        title: "Policy Updated",
+        description: "Policy has been updated successfully",
+      });
+    },
+  });
+
+  // Delete policy
+  const deletePolicy = useMutation({
+    mutationFn: async (id: string) => {
+      const { error, data } = await supabase
+        .from("policies")
+        .delete()
+        .eq("id", id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data as Policy;
+    },
+    onSuccess: (data) => {
+      // Update policies in cache
+      queryClient.invalidateQueries({ queryKey: ["policies"] });
+      queryClient.invalidateQueries({ queryKey: ["policies", data.client_id] });
+      
+      toast({
+        title: "Policy Deleted",
+        description: "Policy has been removed successfully",
+      });
+    },
+  });
+
   return {
     clients,
     isLoadingClients,
@@ -250,5 +349,8 @@ export function useClients() {
     useClientPolicies,
     getPoliciesByClientId,
     updateClientPipelineStage,
+    addPolicy,
+    updatePolicy,
+    deletePolicy,
   };
 }

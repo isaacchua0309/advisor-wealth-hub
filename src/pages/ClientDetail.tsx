@@ -7,7 +7,6 @@ import { ArrowLeft, Edit, Trash2 } from "lucide-react";
 import { ClientDetailsCard } from "@/components/clients/ClientDetailsCard";
 import { PolicyList } from "@/components/clients/PolicyList";
 import { useClients } from "@/hooks/useClients";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { EditClientDialog } from "@/components/clients/EditClientDialog";
@@ -26,13 +25,12 @@ import type { Client } from "@/types/client";
 export default function ClientDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { useClient, useClientPolicies } = useClients();
+  const { useClient, useClientPolicies, deleteClient } = useClients();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
   
   const { 
     data: client, 
@@ -73,17 +71,26 @@ export default function ClientDetail() {
 
   const handlePipelineStageChange = async (newStage: Client['pipeline_stage']) => {
     try {
-      const { data, error } = await supabase
-        .from('clients')
-        .update({ pipeline_stage: newStage })
-        .eq('id', client.id)
-        .select()
-        .single();
+      await queryClient.fetchQuery({
+        queryKey: ['clients', id],
+        queryFn: async () => {
+          const { data, error } = await supabase
+            .from('clients')
+            .update({ pipeline_stage: newStage })
+            .eq('id', client.id)
+            .select()
+            .single();
 
-      if (error) throw error;
-
-      // Optimistically update the local state
-      queryClient.setQueryData(['clients', id], data);
+          if (error) throw error;
+          return data;
+        },
+      });
+      
+      // Update local cache
+      queryClient.setQueryData(['clients', id], {
+        ...client,
+        pipeline_stage: newStage
+      });
       
       toast({
         title: "Pipeline Stage Updated",
@@ -100,22 +107,8 @@ export default function ClientDetail() {
   };
 
   const handleDeleteClient = async () => {
-    if (!client || !id) return;
-    
-    setIsDeleting(true);
     try {
-      // Delete client (cascade delete will handle associated policies)
-      const { error } = await supabase
-        .from('clients')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      // Invalidate queries to refresh the client list
-      queryClient.invalidateQueries({ queryKey: ['clients'] });
-      queryClient.invalidateQueries({ queryKey: ['policies'] });
-      
+      await deleteClient.mutateAsync(id!);
       toast({
         title: "Client Deleted",
         description: `${client.name} has been removed`,
@@ -130,9 +123,6 @@ export default function ClientDetail() {
         description: "Failed to delete client",
         variant: "destructive",
       });
-    } finally {
-      setIsDeleting(false);
-      setIsDeleteDialogOpen(false);
     }
   };
 
@@ -190,10 +180,8 @@ export default function ClientDetail() {
           onPipelineStageChange={handlePipelineStageChange} 
         />
         
-        <div>
-          <h2 className="text-2xl font-bold mb-4">Policies</h2>
-          <PolicyList policies={policies || []} />
-        </div>
+        {/* Policy List with Add/Edit/Delete functionality */}
+        {id && <PolicyList policies={policies || []} clientId={id} />}
       </div>
       
       {/* Edit Client Dialog */}
@@ -220,10 +208,10 @@ export default function ClientDetail() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleDeleteClient}
-              disabled={isDeleting}
+              disabled={deleteClient.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? "Deleting..." : "Delete Client"}
+              {deleteClient.isPending ? "Deleting..." : "Delete Client"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
