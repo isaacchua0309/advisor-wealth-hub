@@ -9,6 +9,151 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      clients: {
+        Row: {
+          age_group: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          occupation: string | null
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          age_group?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          occupation?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          age_group?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          occupation?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      deals: {
+        Row: {
+          client_id: string
+          created_at: string
+          expected_close_date: string | null
+          id: string
+          notes: string | null
+          probability: number | null
+          stage: string
+          title: string
+          updated_at: string
+          user_id: string
+          value: number | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          expected_close_date?: string | null
+          id?: string
+          notes?: string | null
+          probability?: number | null
+          stage: string
+          title: string
+          updated_at?: string
+          user_id: string
+          value?: number | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          expected_close_date?: string | null
+          id?: string
+          notes?: string | null
+          probability?: number | null
+          stage?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deals_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      policies: {
+        Row: {
+          client_id: string
+          created_at: string
+          end_date: string | null
+          id: string
+          policy_name: string
+          policy_number: string | null
+          policy_type: string
+          premium: number | null
+          provider: string | null
+          start_date: string | null
+          status: string | null
+          updated_at: string
+          user_id: string
+          value: number | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          policy_name: string
+          policy_number?: string | null
+          policy_type: string
+          premium?: number | null
+          provider?: string | null
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id: string
+          value?: number | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          policy_name?: string
+          policy_number?: string | null
+          policy_type?: string
+          premium?: number | null
+          provider?: string | null
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+          value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "policies_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -29,6 +174,53 @@ export type Database = {
           id?: string
         }
         Relationships: []
+      }
+      tasks: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          priority: string | null
+          status: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

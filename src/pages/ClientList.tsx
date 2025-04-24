@@ -4,59 +4,54 @@ import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { 
-  Table, 
-  TableBody, 
-  TableCaption, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search } from "lucide-react";
-
-// Mock client data
-const mockClients = [
-  { id: "1", name: "Sarah Chen", email: "sarah.chen@example.com", phone: "+65 9123 4567", policies: 3, value: "S$350,000" },
-  { id: "2", name: "Michael Tan", email: "michael.tan@example.com", phone: "+65 8765 4321", policies: 2, value: "S$210,000" },
-  { id: "3", name: "Priya Kumar", email: "priya.kumar@example.com", phone: "+65 9876 5432", policies: 1, value: "S$125,000" },
-  { id: "4", name: "David Wong", email: "david.wong@example.com", phone: "+65 8234 5678", policies: 4, value: "S$480,000" },
-  { id: "5", name: "Li Wei", email: "li.wei@example.com", phone: "+65 9345 6789", policies: 2, value: "S$230,000" },
-  { id: "6", name: "Jenny Lim", email: "jenny.lim@example.com", phone: "+65 8456 7890", policies: 3, value: "S$310,000" },
-  { id: "7", name: "Rajesh Singh", email: "rajesh.singh@example.com", phone: "+65 9567 8901", policies: 1, value: "S$95,000" },
-  { id: "8", name: "Amanda Ng", email: "amanda.ng@example.com", phone: "+65 8678 9012", policies: 2, value: "S$190,000" },
-];
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useForm } from "react-hook-form";
+import { useClients } from "@/hooks/useClients";
+import { useToast } from "@/hooks/use-toast";
+import type { CreateClientInput } from "@/types/client";
 
 export default function ClientList() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredClients, setFilteredClients] = useState(mockClients);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { clients, isLoading, createClient } = useClients();
+  const { register, handleSubmit, reset } = useForm<CreateClientInput>();
+
+  const filteredClients = clients?.filter(client => 
+    client.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    (client.email && client.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (client.phone && client.phone.includes(searchQuery))
+  ) ?? [];
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const query = e.target.value.toLowerCase();
-    setSearchQuery(query);
-    
-    const filtered = mockClients.filter(client => 
-      client.name.toLowerCase().includes(query) || 
-      client.email.toLowerCase().includes(query) ||
-      client.phone.includes(query)
-    );
-    
-    setFilteredClients(filtered);
+    setSearchQuery(e.target.value);
   };
 
   const handleRowClick = (clientId: string) => {
     navigate(`/clients/${clientId}`);
   };
 
-  const handleAddClient = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsDialogOpen(false);
-    // In a real app, we would add the client to the database
+  const onSubmit = async (data: CreateClientInput) => {
+    try {
+      await createClient.mutateAsync(data);
+      setIsDialogOpen(false);
+      reset();
+      toast({
+        title: "Success",
+        description: "Client created successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create client. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -83,37 +78,48 @@ export default function ClientList() {
                 Enter the client's details below to create a new client record.
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleAddClient}>
+            <form onSubmit={handleSubmit(onSubmit)}>
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="name" className="text-right">
-                    Name
-                  </Label>
-                  <Input id="name" placeholder="Full name" className="col-span-3" required />
+                  <Label htmlFor="name" className="text-right">Name</Label>
+                  <Input
+                    id="name"
+                    placeholder="Full name"
+                    className="col-span-3"
+                    {...register("name", { required: true })}
+                  />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="email" className="text-right">
-                    Email
-                  </Label>
-                  <Input id="email" placeholder="Email address" type="email" className="col-span-3" required />
+                  <Label htmlFor="email" className="text-right">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Email address"
+                    className="col-span-3"
+                    {...register("email")}
+                  />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="phone" className="text-right">
-                    Phone
-                  </Label>
-                  <Input id="phone" placeholder="Phone number" className="col-span-3" required />
+                  <Label htmlFor="phone" className="text-right">Phone</Label>
+                  <Input
+                    id="phone"
+                    placeholder="Phone number"
+                    className="col-span-3"
+                    {...register("phone")}
+                  />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="occupation" className="text-right">
-                    Occupation
-                  </Label>
-                  <Input id="occupation" placeholder="Occupation" className="col-span-3" />
+                  <Label htmlFor="occupation" className="text-right">Occupation</Label>
+                  <Input
+                    id="occupation"
+                    placeholder="Occupation"
+                    className="col-span-3"
+                    {...register("occupation")}
+                  />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="age-group" className="text-right">
-                    Age Group
-                  </Label>
-                  <Select>
+                  <Label htmlFor="age_group" className="text-right">Age Group</Label>
+                  <Select onValueChange={(value) => register("age_group").onChange({ target: { value } })}>
                     <SelectTrigger className="col-span-3">
                       <SelectValue placeholder="Select an age group" />
                     </SelectTrigger>
@@ -128,7 +134,9 @@ export default function ClientList() {
                 </div>
               </div>
               <DialogFooter>
-                <Button type="submit">Create Client</Button>
+                <Button type="submit" disabled={createClient.isPending}>
+                  {createClient.isPending ? "Creating..." : "Create Client"}
+                </Button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -149,43 +157,51 @@ export default function ClientList() {
         </div>
         <CardContent className="p-0">
           <Table>
-            <TableCaption>A list of your clients</TableCaption>
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Contact Information</TableHead>
-                <TableHead>Policies</TableHead>
-                <TableHead>Total Value</TableHead>
+                <TableHead>Occupation</TableHead>
+                <TableHead>Age Group</TableHead>
                 <TableHead></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredClients.map((client) => (
-                <TableRow 
-                  key={client.id}
-                  onClick={() => handleRowClick(client.id)}
-                  className="cursor-pointer hover:bg-muted/50"
-                >
-                  <TableCell className="font-medium">{client.name}</TableCell>
-                  <TableCell>
-                    <div>{client.email}</div>
-                    <div className="text-sm text-muted-foreground">{client.phone}</div>
-                  </TableCell>
-                  <TableCell>{client.policies}</TableCell>
-                  <TableCell>{client.value}</TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="sm">
-                      View
-                    </Button>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8">
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin h-6 w-6 border-b-2 border-primary rounded-full"></div>
+                    </div>
                   </TableCell>
                 </TableRow>
-              ))}
-              {filteredClients.length === 0 && (
+              ) : filteredClients.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-8">
                     No clients found matching your search.
                   </TableCell>
                 </TableRow>
+              ) : (
+                filteredClients.map((client) => (
+                  <TableRow 
+                    key={client.id}
+                    onClick={() => handleRowClick(client.id)}
+                    className="cursor-pointer hover:bg-muted/50"
+                  >
+                    <TableCell className="font-medium">{client.name}</TableCell>
+                    <TableCell>
+                      <div>{client.email}</div>
+                      <div className="text-sm text-muted-foreground">{client.phone}</div>
+                    </TableCell>
+                    <TableCell>{client.occupation}</TableCell>
+                    <TableCell>{client.age_group}</TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="sm">
+                        View
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
               )}
             </TableBody>
           </Table>
