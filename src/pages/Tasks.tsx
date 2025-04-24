@@ -11,9 +11,9 @@ import { TaskForm } from "@/components/tasks/TaskForm";
 export default function Tasks() {
   const { tasks, isLoading, createTask, updateTask, deleteTask } = useTasks();
   const [filters, setFilters] = useState({
-    status: '',
-    priority: '',
-    task_type: '',
+    status: 'all',
+    priority: 'all',
+    task_type: 'all',
     search: ''
   });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -41,9 +41,9 @@ export default function Tasks() {
   // Filter tasks based on selected filters and search
   const filteredTasks = tasks?.filter(task => {
     return (
-      (!filters.status || task.status === filters.status) &&
-      (!filters.priority || task.priority === filters.priority) &&
-      (!filters.task_type || task.task_type === filters.task_type) &&
+      (filters.status === 'all' || task.status === filters.status) &&
+      (filters.priority === 'all' || task.priority === filters.priority) &&
+      (filters.task_type === 'all' || task.task_type === filters.task_type) &&
       (!filters.search || task.title.toLowerCase().includes(filters.search.toLowerCase()) || 
        (task.description && task.description.toLowerCase().includes(filters.search.toLowerCase())))
     );

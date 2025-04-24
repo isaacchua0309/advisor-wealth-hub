@@ -21,7 +21,7 @@ export function TaskFilters({ filters, onFilterChange, onSearchChange }: TaskFil
           <SelectValue placeholder="Status" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">All Statuses</SelectItem>
+          <SelectItem value="all">All Statuses</SelectItem>
           <SelectItem value="pending">Pending</SelectItem>
           <SelectItem value="completed">Completed</SelectItem>
           <SelectItem value="overdue">Overdue</SelectItem>
@@ -33,7 +33,7 @@ export function TaskFilters({ filters, onFilterChange, onSearchChange }: TaskFil
           <SelectValue placeholder="Priority" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">All Priorities</SelectItem>
+          <SelectItem value="all">All Priorities</SelectItem>
           <SelectItem value="low">Low</SelectItem>
           <SelectItem value="medium">Medium</SelectItem>
           <SelectItem value="high">High</SelectItem>
@@ -45,7 +45,7 @@ export function TaskFilters({ filters, onFilterChange, onSearchChange }: TaskFil
           <SelectValue placeholder="Task Type" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">All Types</SelectItem>
+          <SelectItem value="all">All Types</SelectItem>
           <SelectItem value="follow-up">Follow-up</SelectItem>
           <SelectItem value="meeting">Meeting</SelectItem>
           <SelectItem value="document">Document</SelectItem>
