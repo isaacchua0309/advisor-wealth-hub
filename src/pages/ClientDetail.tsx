@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
@@ -5,13 +6,17 @@ import { ArrowLeft } from "lucide-react";
 import { ClientDetailsCard } from "@/components/clients/ClientDetailsCard";
 import { PolicyList } from "@/components/clients/PolicyList";
 import { useClients } from "@/hooks/useClients";
-import { supabase } from "@/lib/supabase";
-import { toast } from "react-toastify";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
+import type { Client } from "@/types/client";
 
 export default function ClientDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { useClient, useClientPolicies } = useClients();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const { 
     data: client, 

@@ -44,15 +44,22 @@ export function ClientsTable({ clients, policies = {}, isLoading, onClientSelect
     }
   };
 
-  const getPipelineStageBadgeVariant = (stage: Client['pipeline_stage']) => {
+  const getBadgeVariant = (stage: Client['pipeline_stage']) => {
     switch (stage) {
-      case 'Lead': return 'secondary';
-      case 'Contacted': return 'outline';
-      case 'Proposal Sent': return 'default';
-      case 'Negotiation': return 'warning';
-      case 'Closed Won': return 'success';
-      case 'Closed Lost': return 'destructive';
-      default: return 'secondary';
+      case 'Lead':
+        return 'secondary';
+      case 'Contacted':
+        return 'outline';
+      case 'Proposal Sent':
+        return 'default';
+      case 'Negotiation':
+        return 'secondary';
+      case 'Closed Won':
+        return 'default';
+      case 'Closed Lost':
+        return 'destructive';
+      default:
+        return 'secondary';
     }
   };
 
@@ -141,7 +148,7 @@ export function ClientsTable({ clients, policies = {}, isLoading, onClientSelect
                 )}
               </TableCell>
               <TableCell>
-                <Badge variant={getPipelineStageBadgeVariant(client.pipeline_stage)}>
+                <Badge variant={getBadgeVariant(client.pipeline_stage)}>
                   {client.pipeline_stage}
                 </Badge>
               </TableCell>
