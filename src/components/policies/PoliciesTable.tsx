@@ -305,8 +305,8 @@ export default function PoliciesTable({ policies }: PoliciesTableProps) {
             <PaginationItem>
               <PaginationPrevious 
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
                 className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                aria-disabled={currentPage === 1}
               />
             </PaginationItem>
             
@@ -325,7 +325,7 @@ export default function PoliciesTable({ policies }: PoliciesTableProps) {
                 const showEllipsisAfter = index < array.length - 1 && array[index + 1] !== page + 1;
                 
                 return (
-                  <React.Fragment key={page}>
+                  <span key={page}>
                     {showEllipsisBefore && (
                       <PaginationItem>
                         <span className="flex h-9 w-9 items-center justify-center">...</span>
@@ -346,15 +346,15 @@ export default function PoliciesTable({ policies }: PoliciesTableProps) {
                         <span className="flex h-9 w-9 items-center justify-center">...</span>
                       </PaginationItem>
                     )}
-                  </React.Fragment>
+                  </span>
                 );
               })}
             
             <PaginationItem>
               <PaginationNext 
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
                 className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                aria-disabled={currentPage === totalPages}
               />
             </PaginationItem>
           </PaginationContent>
