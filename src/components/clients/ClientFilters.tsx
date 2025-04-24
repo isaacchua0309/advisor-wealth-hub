@@ -56,7 +56,7 @@ export function ClientFilters({
 
   // Calculate max policy value across all clients for slider max
   const maxPolicyValue = Object.values(policyMap).reduce((max, policies) => {
-    const clientTotal = policies.reduce((sum, policy) => sum + (policy.value || 0), 0);
+    const clientTotal = policies.reduce((sum, policy) => sum + (policy.premium || 0), 0);
     return Math.max(max, clientTotal);
   }, 10000); // Set a reasonable default if no policies exist
   
@@ -139,10 +139,10 @@ export function ClientFilters({
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Age Group</label>
                   <Select 
-                    value={localFilters.ageGroup || undefined} 
+                    value={localFilters.ageGroup || "any"} 
                     onValueChange={(value) => setLocalFilters({
                       ...localFilters,
-                      ageGroup: value === "" ? null : value
+                      ageGroup: value === "any" ? null : value
                     })}
                   >
                     <SelectTrigger className="w-full">
@@ -162,7 +162,7 @@ export function ClientFilters({
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Pipeline Stage</label>
                   <Select 
-                    value={localFilters.pipelineStage || undefined}
+                    value={localFilters.pipelineStage || "any"}
                     onValueChange={(value) => setLocalFilters({
                       ...localFilters,
                       pipelineStage: value === "any" ? null : value as Client['pipeline_stage']

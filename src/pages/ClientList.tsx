@@ -5,7 +5,7 @@ import { useClients } from "@/hooks/useClients";
 import { AddClientDialog } from "@/components/clients/AddClientDialog";
 import { ClientsTable } from "@/components/clients/ClientsTable";
 import { ClientFilters } from "@/components/clients/ClientFilters";
-import type { CreateClientInput } from "@/types/client";
+import type { Client, CreateClientInput } from "@/types/client";
 import type { CreatePolicyInput } from "@/types/policy";
 
 export default function ClientList() {
@@ -14,7 +14,7 @@ export default function ClientList() {
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
   const [filters, setFilters] = useState({
     ageGroup: null as string | null,
-    pipelineStage: null as string | null,
+    pipelineStage: null as Client['pipeline_stage'] | null,
     minValue: 0,
     maxValue: 1000000, // Default max value
   });
@@ -60,7 +60,7 @@ export default function ClientList() {
     setIsDialogOpen(false);
   };
 
-  const handleClientStageChange = async (clientId: string, stage: string) => {
+  const handleClientStageChange = async (clientId: string, stage: Client['pipeline_stage']) => {
     await updateClientPipelineStage(clientId, stage);
   };
 

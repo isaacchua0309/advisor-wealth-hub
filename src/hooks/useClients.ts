@@ -134,14 +134,75 @@ export function useClients() {
     },
   });
 
+  // Update client
+  const updateClient = useMutation({
+    mutationFn: async ({ id, data }: { id: string, data: Partial<Client> }) => {
+      const { data: updatedClient, error } = await supabase
+        .from("clients")
+        .update(data)
+        .eq("id", id)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      return updatedClient as Client;
+    },
+    onSuccess: (data, variables) => {
+      // Update client in cache
+      queryClient.setQueryData(["clients", variables.id], data);
+      
+      // Update client in clients list
+      queryClient.setQueryData(["clients"], (oldData: Client[] | undefined) => {
+        if (!oldData) return oldData;
+        return oldData.map(client => 
+          client.id === variables.id ? { ...client, ...data } : client
+        );
+      });
+      
+      toast({
+        title: "Client Updated",
+        description: "Client information has been updated",
+      });
+    },
+  });
+
+  // Delete client
+  const deleteClient = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("clients")
+        .delete()
+        .eq("id", id);
+        
+      if (error) throw error;
+      return id;
+    },
+    onSuccess: (id) => {
+      // Remove client from cache
+      queryClient.removeQueries({ queryKey: ["clients", id] });
+      
+      // Update clients list
+      queryClient.setQueryData(["clients"], (oldData: Client[] | undefined) => {
+        if (!oldData) return oldData;
+        return oldData.filter(client => client.id !== id);
+      });
+      
+      // Invalidate policies query to refresh
+      queryClient.invalidateQueries({ queryKey: ["policies"] });
+      
+      toast({
+        title: "Client Deleted",
+        description: "Client has been permanently removed",
+      });
+    },
+  });
+
   // Update client pipeline stage
-  const updateClientPipelineStage = async (clientId: string, stage: string) => {
-    const pipelineStage = stage as Client['pipeline_stage'];
-    
+  const updateClientPipelineStage = async (clientId: string, stage: Client['pipeline_stage']) => {
     try {
       const { data, error } = await supabase
         .from('clients')
-        .update({ pipeline_stage: pipelineStage })
+        .update({ pipeline_stage: stage })
         .eq('id', clientId)
         .select()
         .single();
@@ -155,14 +216,14 @@ export function useClients() {
       queryClient.setQueryData(['clients'], (oldData: Client[] | undefined) => {
         if (!oldData) return oldData;
         return oldData.map(client => 
-          client.id === clientId ? { ...client, pipeline_stage: pipelineStage } : client
+          client.id === clientId ? { ...client, pipeline_stage: stage } : client
         );
       });
 
       // Show success toast
       toast({
         title: "Pipeline Stage Updated",
-        description: `Client stage changed to ${pipelineStage}`
+        description: `Client stage changed to ${stage}`
       });
 
       return data;
@@ -183,6 +244,8 @@ export function useClients() {
     policies,
     isLoadingPolicies,
     createClient,
+    updateClient,
+    deleteClient,
     useClient,
     useClientPolicies,
     getPoliciesByClientId,

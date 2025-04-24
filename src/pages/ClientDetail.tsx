@@ -1,14 +1,26 @@
 
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Edit, Trash2 } from "lucide-react";
 import { ClientDetailsCard } from "@/components/clients/ClientDetailsCard";
 import { PolicyList } from "@/components/clients/PolicyList";
 import { useClients } from "@/hooks/useClients";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { EditClientDialog } from "@/components/clients/EditClientDialog";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { Client } from "@/types/client";
 
 export default function ClientDetail() {
@@ -17,6 +29,10 @@ export default function ClientDetail() {
   const { useClient, useClientPolicies } = useClients();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const { 
     data: client, 
@@ -83,9 +99,57 @@ export default function ClientDetail() {
     }
   };
 
+  const handleDeleteClient = async () => {
+    if (!client || !id) return;
+    
+    setIsDeleting(true);
+    try {
+      // Delete client (cascade delete will handle associated policies)
+      const { error } = await supabase
+        .from('clients')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Invalidate queries to refresh the client list
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+      queryClient.invalidateQueries({ queryKey: ['policies'] });
+      
+      toast({
+        title: "Client Deleted",
+        description: `${client.name} has been removed`,
+      });
+      
+      // Navigate back to clients list
+      navigate('/clients');
+    } catch (error) {
+      console.error("Error deleting client:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete client",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteDialogOpen(false);
+    }
+  };
+
+  const handleClientUpdate = (updatedClient: Partial<Client>) => {
+    // Update client data in the cache
+    queryClient.setQueryData(['clients', id], {
+      ...client,
+      ...updatedClient
+    });
+    
+    // Close the edit dialog
+    setIsEditDialogOpen(false);
+  };
+
   return (
     <div className="space-y-6">
-      <div>
+      <div className="flex justify-between items-center">
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
@@ -97,6 +161,27 @@ export default function ClientDetail() {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
+        
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setIsEditDialogOpen(true)}
+            className="flex items-center gap-1"
+          >
+            <Edit className="h-4 w-4" />
+            <span className="hidden sm:inline">Edit Client</span>
+          </Button>
+          <Button 
+            variant="destructive" 
+            size="sm" 
+            onClick={() => setIsDeleteDialogOpen(true)}
+            className="flex items-center gap-1"
+          >
+            <Trash2 className="h-4 w-4" />
+            <span className="hidden sm:inline">Delete</span>
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-6">
@@ -110,6 +195,39 @@ export default function ClientDetail() {
           <PolicyList policies={policies || []} />
         </div>
       </div>
+      
+      {/* Edit Client Dialog */}
+      {client && (
+        <EditClientDialog
+          client={client}
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          onClientUpdate={handleClientUpdate}
+        />
+      )}
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to delete this client?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the client
+              and all associated policies.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteClient}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Delete Client"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
