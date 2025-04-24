@@ -13,36 +13,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-
-const PAYMENT_STRUCTURES = [
-  { value: "single_premium", label: "Single Premium" },
-  { value: "one_year_term", label: "One-Year Term Policy" },
-  { value: "regular_premium", label: "Regular Premium Policy" },
-  { value: "five_year_premium", label: "5-Year Premium Payment" },
-  { value: "ten_year_premium", label: "10-Year Premium Payment" },
-  { value: "lifetime_premium", label: "Lifetime Premium Payment" },
-];
-
-const POLICY_TYPES = [
-  "Life Insurance",
-  "Health Insurance",
-  "Property Insurance",
-  "Auto Insurance",
-  "Disability Insurance",
-  "Critical Illness",
-  "Travel Insurance",
-  "Business Insurance",
-  "Income Protection",
-  "Other",
-];
-
-const POLICY_STATUSES = [
-  { value: "active", label: "Active" },
-  { value: "inactive", label: "Inactive" },
-  { value: "pending", label: "Pending" },
-  { value: "expired", label: "Expired" },
-  { value: "cancelled", label: "Cancelled" },
-];
+import { POLICY_TYPES, PAYMENT_STRUCTURES, POLICY_STATUSES } from "./PolicyFiltersOptions";
 
 interface PolicyFiltersProps {
   filters: PolicyFiltersType;
@@ -133,7 +104,7 @@ export default function PolicyFilters({
                     <SelectValue placeholder="All Policy Types" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Policy Types</SelectItem>
+                    <SelectItem value="all">All Policy Types</SelectItem>
                     {POLICY_TYPES.map(type => (
                       <SelectItem key={type} value={type}>{type}</SelectItem>
                     ))}
@@ -161,7 +132,7 @@ export default function PolicyFilters({
                     <SelectValue placeholder="All Payment Structures" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Payment Structures</SelectItem>
+                    <SelectItem value="all">All Payment Structures</SelectItem>
                     {PAYMENT_STRUCTURES.map(structure => (
                       <SelectItem key={structure.value} value={structure.value}>
                         {structure.label}
@@ -191,7 +162,7 @@ export default function PolicyFilters({
                     <SelectValue placeholder="All Statuses" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Statuses</SelectItem>
+                    <SelectItem value="all">All Statuses</SelectItem>
                     {POLICY_STATUSES.map(status => (
                       <SelectItem key={status.value} value={status.value}>
                         {status.label}

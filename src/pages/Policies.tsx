@@ -26,12 +26,12 @@ export default function Policies() {
   // State for filtered policies
   const [filteredPolicies, setFilteredPolicies] = useState<Policy[]>([]);
   
-  // Initialize filter state
+  // Initialize filter state with non-empty default values
   const [filters, setFilters] = useState<PolicyFilters>({
     search: "",
-    policyType: "",
-    paymentStructure: "",
-    status: "",
+    policyType: "all",
+    paymentStructure: "all",
+    status: "all",
     policyDuration: [0, 100],
     premiumRange: [0, 1000000],
     commissionRange: [0, 100],
@@ -72,15 +72,15 @@ export default function Policies() {
         policy.policy_name.toLowerCase().includes(filters.search.toLowerCase());
       
       // Filter by policy type
-      const typeMatch = !filters.policyType || 
+      const typeMatch = filters.policyType === "all" || 
         policy.policy_type === filters.policyType;
       
       // Filter by payment structure
-      const paymentStructureMatch = !filters.paymentStructure || 
+      const paymentStructureMatch = filters.paymentStructure === "all" || 
         policy.payment_structure_type === filters.paymentStructure;
       
       // Filter by status
-      const statusMatch = !filters.status || 
+      const statusMatch = filters.status === "all" || 
         policy.status === filters.status;
       
       // Filter by policy duration
@@ -113,9 +113,9 @@ export default function Policies() {
   const clearFilters = () => {
     setFilters({
       search: "",
-      policyType: "",
-      paymentStructure: "",
-      status: "",
+      policyType: "all",
+      paymentStructure: "all",
+      status: "all",
       policyDuration: [0, 100],
       premiumRange: [0, maxPremium],
       commissionRange: [0, 100],
