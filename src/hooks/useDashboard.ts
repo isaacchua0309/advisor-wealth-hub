@@ -1,43 +1,82 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export function useDashboard() {
-  // Get current year for calculations
-  const currentYear = new Date().getFullYear();
+  // Get current date for calculations
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth();
+  const currentDay = currentDate.getDate();
 
   // Fetch total commission with proper calculation logic
   const { data: totalCommission, isLoading: isLoadingCommission } = useQuery({
     queryKey: ["totalCommission"],
     queryFn: async () => {
-      // Get all active policies
+      // Get all policies
       const { data: policies, error } = await supabase
         .from("policies")
-        .select("first_year_commission, annual_ongoing_commission, start_date, status");
+        .select("first_year_commission, annual_ongoing_commission, start_date, status, policy_duration");
       
       if (error) throw error;
       
       let total = 0;
       
       policies.forEach(policy => {
-        // Add first year commission for all active policies
-        if (policy.status === "active" && policy.first_year_commission) {
+        // Skip policies that aren't active
+        if (policy.status !== "active" || !policy.start_date) {
+          return;
+        }
+        
+        const startDate = new Date(policy.start_date);
+        const policyYears = calculateYearsSince(startDate, currentDate);
+        
+        // Add first year commission for completed first year
+        if (policyYears >= 1 && policy.first_year_commission) {
           total += policy.first_year_commission;
         }
         
-        // Add annual ongoing commission for policies from previous years
-        if (policy.annual_ongoing_commission && policy.start_date) {
-          const policyYear = new Date(policy.start_date).getFullYear();
-          // Only include ongoing commission if the policy started at least a year ago
-          if (policyYear < currentYear) {
-            total += policy.annual_ongoing_commission;
-          }
+        // Add annual ongoing commission for years past the first year
+        if (policy.annual_ongoing_commission && policyYears > 1) {
+          // Calculate how many years of ongoing commission we should count
+          // This should be the minimum of:
+          // 1. Maximum 5 years (regulatory limit)
+          // 2. Policy duration minus 1 (first year uses first_year_commission)
+          // 3. Actual years that have passed minus 1 (first year)
+          
+          const maxOngoingYears = 5; // Maximum allowed by regulation
+          const policyRemainingYears = policy.policy_duration ? policy.policy_duration - 1 : Infinity;
+          const actualOngoingYears = policyYears - 1; // Exclude the first year
+          
+          // Take the minimum of these three constraints
+          const ongoingYearsToCount = Math.min(
+            maxOngoingYears, 
+            policyRemainingYears, 
+            actualOngoingYears
+          );
+          
+          total += policy.annual_ongoing_commission * ongoingYearsToCount;
         }
       });
       
       return total;
     },
   });
+
+  // Helper function to calculate years between two dates
+  function calculateYearsSince(startDate, currentDate) {
+    const yearDiff = currentDate.getFullYear() - startDate.getFullYear();
+    
+    // If we haven't reached the anniversary date yet this year, subtract 1
+    if (
+      currentDate.getMonth() < startDate.getMonth() || 
+      (currentDate.getMonth() === startDate.getMonth() && 
+       currentDate.getDate() < startDate.getDate())
+    ) {
+      return Math.max(0, yearDiff - 1);
+    }
+    
+    return yearDiff;
+  }
 
   // Fetch active clients count
   const { data: activeClients, isLoading: isLoadingClients } = useQuery({
@@ -80,40 +119,56 @@ export function useDashboard() {
     },
   });
 
-  // Fetch annual commission data grouped by year
+  // Fetch annual commission data grouped by year with corrected calculation
   const { data: annualCommission, isLoading: isLoadingAnnual } = useQuery({
     queryKey: ["annualCommission"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("policies")
-        .select("created_at, first_year_commission, annual_ongoing_commission, start_date");
+        .select("start_date, first_year_commission, annual_ongoing_commission, policy_duration, status");
       
       if (error) throw error;
 
-      // Group by year and sum commissions
-      const annualData = data.reduce((acc, policy) => {
-        const year = new Date(policy.created_at).getFullYear();
-        const firstYearAmount = policy.first_year_commission || 0;
+      // Group by year and sum commissions with corrected logic
+      const annualData = {};
+      
+      data.forEach(policy => {
+        // Skip policies that aren't active or don't have a start date
+        if (policy.status !== "active" || !policy.start_date) {
+          return;
+        }
         
-        // For annual ongoing, check if policy start date is from previous years
-        let ongoingAmount = 0;
-        if (policy.start_date && policy.annual_ongoing_commission) {
-          const startYear = new Date(policy.start_date).getFullYear();
-          if (startYear < year) {
-            ongoingAmount = policy.annual_ongoing_commission;
+        const startDate = new Date(policy.start_date);
+        const startYear = startDate.getFullYear();
+        
+        // Process first year commission
+        if (policy.first_year_commission && startYear < currentYear) {
+          // Only count if the first year has been completed
+          if (!annualData[startYear]) {
+            annualData[startYear] = 0;
+          }
+          annualData[startYear] += policy.first_year_commission;
+        }
+        
+        // Process annual ongoing commission for completed years
+        if (policy.annual_ongoing_commission) {
+          const maxOngoingYears = 5; // Maximum allowed by regulation
+          const policyRemainingYears = policy.policy_duration ? policy.policy_duration - 1 : Infinity;
+          
+          // Calculate how many years of ongoing commission we should count
+          for (let yearOffset = 1; yearOffset <= Math.min(maxOngoingYears, policyRemainingYears); yearOffset++) {
+            const yearToCheck = startYear + yearOffset;
+            
+            // Only count completed years
+            if (yearToCheck < currentYear) {
+              if (!annualData[yearToCheck]) {
+                annualData[yearToCheck] = 0;
+              }
+              annualData[yearToCheck] += policy.annual_ongoing_commission;
+            }
           }
         }
-        
-        const totalAmount = firstYearAmount + ongoingAmount;
-        
-        // Create entry for this year if it doesn't exist
-        if (!acc[year]) {
-          acc[year] = 0;
-        }
-        
-        acc[year] += totalAmount;
-        return acc;
-      }, {});
+      });
 
       // Convert to array format for chart
       return Object.entries(annualData).map(([year, amount]) => ({
@@ -220,7 +275,7 @@ export function useDashboard() {
     activeClients,
     activePolicies,
     pendingTasks,
-    annualCommission, // Changed from monthlyCommission to annualCommission
+    annualCommission,
     pipelineData,
     upcomingTasks,
     recentClients,
