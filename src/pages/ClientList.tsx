@@ -2,15 +2,22 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useClients } from "@/hooks/useClients";
-import { ClientSearchBar } from "@/components/clients/ClientSearchBar";
 import { AddClientDialog } from "@/components/clients/AddClientDialog";
 import { ClientsTable } from "@/components/clients/ClientsTable";
+import { ClientFilters } from "@/components/clients/ClientFilters";
 import type { CreateClientInput } from "@/types/client";
 import type { CreatePolicyInput } from "@/types/policy";
 
 export default function ClientList() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
+  const [filters, setFilters] = useState({
+    ageGroup: null as string | null,
+    pipelineStage: null as string | null,
+    minValue: 0,
+    maxValue: 1000000, // Default max value
+  });
   
   const { 
     clients, 
@@ -18,20 +25,43 @@ export default function ClientList() {
     policies,
     isLoadingPolicies, 
     createClient,
-    getPoliciesByClientId
+    getPoliciesByClientId,
+    updateClientPipelineStage
   } = useClients();
 
-  const filteredClients = clients?.filter(client => 
-    client.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    (client.email && client.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    (client.phone && client.phone.includes(searchQuery))
-  ) ?? [];
-  
   const policyMap = getPoliciesByClientId();
 
+  const filteredClients = clients?.filter(client => {
+    // Text search filter
+    const textMatch = !searchQuery || 
+      client.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      (client.email && client.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (client.phone && client.phone.includes(searchQuery));
+    
+    // Age group filter
+    const ageGroupMatch = !filters.ageGroup || client.age_group === filters.ageGroup;
+    
+    // Pipeline stage filter
+    const stageMatch = !filters.pipelineStage || client.pipeline_stage === filters.pipelineStage;
+    
+    // Value filter
+    const clientPolicies = policyMap[client.id] || [];
+    const clientValue = clientPolicies.reduce(
+      (sum, policy) => sum + (policy.premium || 0), 
+      0
+    );
+    const valueMatch = clientValue >= filters.minValue && clientValue <= filters.maxValue;
+    
+    return textMatch && ageGroupMatch && stageMatch && valueMatch;
+  }) ?? [];
+  
   const handleCreateClient = async (client: CreateClientInput, policies: CreatePolicyInput[]) => {
     await createClient.mutateAsync({ client, policies });
     setIsDialogOpen(false);
+  };
+
+  const handleClientStageChange = async (clientId: string, stage: string) => {
+    await updateClientPipelineStage(clientId, stage);
   };
 
   const isLoading = isLoadingClients || isLoadingPolicies;
@@ -55,9 +85,14 @@ export default function ClientList() {
 
       <Card>
         <div className="p-4 border-b">
-          <ClientSearchBar 
-            value={searchQuery}
-            onChange={setSearchQuery}
+          <ClientFilters
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            filters={filters}
+            onFilterChange={setFilters}
+            policyMap={policyMap}
+            isExpanded={isFiltersExpanded}
+            onToggleExpand={() => setIsFiltersExpanded(!isFiltersExpanded)}
           />
         </div>
         <CardContent className="p-0">
@@ -65,6 +100,7 @@ export default function ClientList() {
             clients={filteredClients}
             policies={policyMap}
             isLoading={isLoading}
+            onClientStageChange={handleClientStageChange}
           />
         </CardContent>
       </Card>

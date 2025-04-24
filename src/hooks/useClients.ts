@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -131,6 +132,31 @@ export function useClients() {
     },
   });
 
+  // Update client pipeline stage
+  const updateClientPipelineStage = async (clientId: string, stage: string) => {
+    const { data, error } = await supabase
+      .from('clients')
+      .update({ pipeline_stage: stage })
+      .eq('id', clientId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Update the cache to reflect the changes
+    queryClient.setQueryData(['clients', clientId], data);
+    
+    // Also update the client in the clients list cache
+    queryClient.setQueryData(['clients'], (oldData: Client[] | undefined) => {
+      if (!oldData) return oldData;
+      return oldData.map(client => 
+        client.id === clientId ? { ...client, pipeline_stage: stage as Client['pipeline_stage'] } : client
+      );
+    });
+
+    return data;
+  };
+
   return {
     clients,
     isLoadingClients,
@@ -140,5 +166,6 @@ export function useClients() {
     useClient,
     useClientPolicies,
     getPoliciesByClientId,
+    updateClientPipelineStage,
   };
 }

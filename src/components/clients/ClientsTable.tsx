@@ -1,3 +1,4 @@
+
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,17 +13,29 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 import type { Client } from "@/types/client";
 import type { Policy } from "@/types/policy";
-import { Badge } from "@/components/ui/badge";
+import { PipelineStageIndicator } from "./PipelineStageIndicator";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface ClientsTableProps {
   clients: Client[];
   policies?: Record<string, Policy[]>;
   isLoading: boolean;
   onClientSelect?: (clientIds: string[]) => void;
+  onClientStageChange?: (clientId: string, stage: Client['pipeline_stage']) => Promise<void>;
 }
 
-export function ClientsTable({ clients, policies = {}, isLoading, onClientSelect }: ClientsTableProps) {
+export function ClientsTable({ 
+  clients, 
+  policies = {}, 
+  isLoading, 
+  onClientSelect,
+  onClientStageChange
+}: ClientsTableProps) {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [selectedClients, setSelectedClients] = useState<string[]>([]);
 
   const handleRowClick = (clientId: string) => {
@@ -44,29 +57,47 @@ export function ClientsTable({ clients, policies = {}, isLoading, onClientSelect
     }
   };
 
-  const getBadgeVariant = (stage: Client['pipeline_stage']) => {
-    switch (stage) {
-      case 'Lead':
-        return 'secondary';
-      case 'Contacted':
-        return 'outline';
-      case 'Proposal Sent':
-        return 'default';
-      case 'Negotiation':
-        return 'secondary';
-      case 'Closed Won':
-        return 'default';
-      case 'Closed Lost':
-        return 'destructive';
-      default:
-        return 'secondary';
+  // Handle pipeline stage change directly in the table
+  const handleStageChange = async (clientId: string, newStage: Client['pipeline_stage']) => {
+    try {
+      if (onClientStageChange) {
+        await onClientStageChange(clientId, newStage);
+      } else {
+        // If no handler is provided, update directly
+        const { error } = await supabase
+          .from('clients')
+          .update({ pipeline_stage: newStage })
+          .eq('id', clientId);
+
+        if (error) throw error;
+
+        // Update local cache
+        queryClient.invalidateQueries({ queryKey: ['clients'] });
+        
+        toast({
+          title: "Pipeline Stage Updated",
+          description: `Client stage changed to ${newStage}`
+        });
+      }
+    } catch (error) {
+      console.error("Failed to update client stage:", error);
+      toast({
+        title: "Update Failed",
+        description: "Could not update pipeline stage",
+        variant: "destructive",
+      });
     }
+  };
+
+  const calculateClientValue = (clientId: string): number => {
+    const clientPolicies = policies[clientId] || [];
+    return clientPolicies.reduce((sum, policy) => sum + (policy.premium || 0), 0);
   };
 
   if (isLoading) {
     return (
       <TableRow>
-        <TableCell colSpan={5} className="text-center py-8">
+        <TableCell colSpan={7} className="text-center py-8">
           <div className="flex items-center justify-center">
             <div className="animate-spin h-6 w-6 border-b-2 border-primary rounded-full"></div>
           </div>
@@ -78,7 +109,7 @@ export function ClientsTable({ clients, policies = {}, isLoading, onClientSelect
   if (clients.length === 0) {
     return (
       <TableRow>
-        <TableCell colSpan={5} className="text-center py-8">
+        <TableCell colSpan={7} className="text-center py-8">
           No clients found matching your search.
         </TableCell>
       </TableRow>
@@ -96,12 +127,14 @@ export function ClientsTable({ clients, policies = {}, isLoading, onClientSelect
           <TableHead>Age Group</TableHead>
           <TableHead>Policies</TableHead>
           <TableHead>Stage</TableHead>
+          <TableHead>Value</TableHead>
           <TableHead></TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {clients.map((client) => {
           const clientPolicies = policies[client.id] || [];
+          const clientValue = calculateClientValue(client.id);
           
           return (
             <TableRow
@@ -147,10 +180,20 @@ export function ClientsTable({ clients, policies = {}, isLoading, onClientSelect
                   <span className="text-xs text-muted-foreground">No policies</span>
                 )}
               </TableCell>
-              <TableCell>
-                <Badge variant={getBadgeVariant(client.pipeline_stage)}>
-                  {client.pipeline_stage}
-                </Badge>
+              <TableCell onClick={(e) => e.stopPropagation()}>
+                <PipelineStageIndicator 
+                  stage={client.pipeline_stage}
+                  clientId={client.id}
+                  isEditable={true}
+                  onStageChange={(stage) => handleStageChange(client.id, stage)}
+                />
+              </TableCell>
+              <TableCell onClick={() => handleRowClick(client.id)}>
+                {clientValue > 0 ? (
+                  <span className="font-medium">${clientValue.toLocaleString()}</span>
+                ) : (
+                  <span className="text-muted-foreground">—</span>
+                )}
               </TableCell>
               <TableCell>
                 <Button variant="ghost" size="sm" onClick={() => handleRowClick(client.id)}>
