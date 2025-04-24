@@ -26,7 +26,7 @@ export function useClients() {
     mutationFn: async (newClient: CreateClientInput) => {
       const { data, error } = await supabase
         .from("clients")
-        .insert([newClient])
+        .insert([{ ...newClient, user_id: user?.id }])
         .select()
         .single();
 
