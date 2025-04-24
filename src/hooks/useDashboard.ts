@@ -3,19 +3,39 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export function useDashboard() {
-  // Fetch total commission
+  // Get current year for calculations
+  const currentYear = new Date().getFullYear();
+
+  // Fetch total commission with proper calculation logic
   const { data: totalCommission, isLoading: isLoadingCommission } = useQuery({
     queryKey: ["totalCommission"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Get all active policies
+      const { data: policies, error } = await supabase
         .from("policies")
-        .select("first_year_commission, annual_ongoing_commission");
+        .select("first_year_commission, annual_ongoing_commission, start_date, status");
       
       if (error) throw error;
       
-      return data.reduce((total, policy) => {
-        return total + (policy.first_year_commission || 0) + (policy.annual_ongoing_commission || 0);
-      }, 0);
+      let total = 0;
+      
+      policies.forEach(policy => {
+        // Add first year commission for all active policies
+        if (policy.status === "active" && policy.first_year_commission) {
+          total += policy.first_year_commission;
+        }
+        
+        // Add annual ongoing commission for policies from previous years
+        if (policy.annual_ongoing_commission && policy.start_date) {
+          const policyYear = new Date(policy.start_date).getFullYear();
+          // Only include ongoing commission if the policy started at least a year ago
+          if (policyYear < currentYear) {
+            total += policy.annual_ongoing_commission;
+          }
+        }
+      });
+      
+      return total;
     },
   });
 
@@ -60,29 +80,46 @@ export function useDashboard() {
     },
   });
 
-  // Fetch monthly commission data
-  const { data: monthlyCommission, isLoading: isLoadingMonthly } = useQuery({
-    queryKey: ["monthlyCommission"],
+  // Fetch annual commission data grouped by year
+  const { data: annualCommission, isLoading: isLoadingAnnual } = useQuery({
+    queryKey: ["annualCommission"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("policies")
-        .select("created_at, first_year_commission, annual_ongoing_commission");
+        .select("created_at, first_year_commission, annual_ongoing_commission, start_date");
       
       if (error) throw error;
 
-      // Group by month and sum commissions
-      const monthly = data.reduce((acc, policy) => {
-        const month = new Date(policy.created_at).toLocaleString('default', { month: 'short' });
-        const total = (policy.first_year_commission || 0) + (policy.annual_ongoing_commission || 0);
+      // Group by year and sum commissions
+      const annualData = data.reduce((acc, policy) => {
+        const year = new Date(policy.created_at).getFullYear();
+        const firstYearAmount = policy.first_year_commission || 0;
         
-        acc[month] = (acc[month] || 0) + total;
+        // For annual ongoing, check if policy start date is from previous years
+        let ongoingAmount = 0;
+        if (policy.start_date && policy.annual_ongoing_commission) {
+          const startYear = new Date(policy.start_date).getFullYear();
+          if (startYear < year) {
+            ongoingAmount = policy.annual_ongoing_commission;
+          }
+        }
+        
+        const totalAmount = firstYearAmount + ongoingAmount;
+        
+        // Create entry for this year if it doesn't exist
+        if (!acc[year]) {
+          acc[year] = 0;
+        }
+        
+        acc[year] += totalAmount;
         return acc;
       }, {});
 
-      return Object.entries(monthly).map(([month, amount]) => ({
-        month,
+      // Convert to array format for chart
+      return Object.entries(annualData).map(([year, amount]) => ({
+        year,
         amount,
-      }));
+      })).sort((a, b) => parseInt(a.year) - parseInt(b.year)); // Sort by year ascending
     },
   });
 
@@ -173,7 +210,7 @@ export function useDashboard() {
     isLoadingClients || 
     isLoadingPolicies || 
     isLoadingTasks || 
-    isLoadingMonthly || 
+    isLoadingAnnual || 
     isLoadingPipeline || 
     isLoadingUpcoming || 
     isLoadingRecentClients;
@@ -183,7 +220,7 @@ export function useDashboard() {
     activeClients,
     activePolicies,
     pendingTasks,
-    monthlyCommission,
+    annualCommission, // Changed from monthlyCommission to annualCommission
     pipelineData,
     upcomingTasks,
     recentClients,

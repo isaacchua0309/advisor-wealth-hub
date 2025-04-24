@@ -20,16 +20,14 @@ import {
 import { useDashboard } from "@/hooks/useDashboard";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 import { format } from "date-fns";
-import { useState } from "react";
 
 export default function Dashboard() {
-  const [period, setPeriod] = useState("month");
   const { 
     totalCommission,
     activeClients,
     activePolicies,
     pendingTasks,
-    monthlyCommission,
+    annualCommission, // Changed from monthlyCommission to annualCommission
     pipelineData,
     upcomingTasks,
     recentClients,
@@ -100,27 +98,21 @@ export default function Dashboard() {
         <Card className="lg:col-span-4">
           <CardHeader>
             <CardTitle>Commission Overview</CardTitle>
-            <CardDescription>Your commission earnings over time</CardDescription>
-            <Tabs defaultValue={period} className="w-full" onValueChange={setPeriod}>
-              <TabsList className="grid w-full max-w-xs grid-cols-3">
-                <TabsTrigger value="week">Week</TabsTrigger>
-                <TabsTrigger value="month">Month</TabsTrigger>
-                <TabsTrigger value="year">Year</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <CardDescription>Your annual commission earnings</CardDescription>
+            {/* Removed time period tabs since we only show annual data now */}
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={monthlyCommission}>
+              <BarChart data={annualCommission}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="month" />
+                <XAxis dataKey="year" />
                 <YAxis 
                   tickFormatter={(value) => `$${value/1000}k`} 
                   width={60}
                 />
                 <Tooltip 
                   formatter={(value) => [`$${value}`, "Commission"]}
-                  labelFormatter={(label) => `${label} 2023`}
+                  labelFormatter={(label) => `Year ${label}`}
                 />
                 <Bar 
                   dataKey="amount" 
