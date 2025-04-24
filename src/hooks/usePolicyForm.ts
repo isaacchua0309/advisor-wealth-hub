@@ -1,10 +1,9 @@
-
 import { useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import type { CreatePolicyInput, Policy } from '@/types/policy';
-import { addDays, differenceInYears } from 'date-fns';
+import { differenceInYears } from 'date-fns';
 
-type FormType = CreatePolicyInput | Partial<Policy>;
+export type FormType = CreatePolicyInput | Partial<Policy & { policy_name: string; policy_type: string; payment_structure_type: Policy['payment_structure_type'] }>;
 
 interface PolicyLimits {
   [key: string]: {
@@ -33,7 +32,6 @@ export function usePolicyForm(form: UseFormReturn<FormType>) {
   const watchPaymentStructure = form.watch('payment_structure_type');
   const watchStatus = form.watch('status');
 
-  // Effect for handling first year commission calculation
   useEffect(() => {
     if (watchPremium && watchCommissionRate && !form.formState.isSubmitting) {
       const totalCommission = watchPremium * (watchCommissionRate / 100);
@@ -41,7 +39,6 @@ export function usePolicyForm(form: UseFormReturn<FormType>) {
     }
   }, [watchPremium, watchCommissionRate]);
 
-  // Effect for handling policy duration calculation
   useEffect(() => {
     if (watchStartDate && watchEndDate && !form.formState.isSubmitting) {
       const startDate = new Date(watchStartDate);
@@ -54,7 +51,6 @@ export function usePolicyForm(form: UseFormReturn<FormType>) {
     }
   }, [watchStartDate, watchEndDate]);
 
-  // Effect for handling annual ongoing commission calculation
   useEffect(() => {
     if (watchPremium && watchCommissionRate && form.getValues('first_year_commission') && watchPaymentStructure) {
       const totalCommission = watchPremium * (watchCommissionRate / 100);
@@ -95,7 +91,7 @@ export function usePolicyForm(form: UseFormReturn<FormType>) {
 
   const isFieldDisabled = (fieldName: keyof FormType) => {
     if (watchStatus === 'expired') {
-      return ['premium', 'commission_rate', 'first_year_commission', 'annual_ongoing_commission'].includes(fieldName);
+      return ['premium', 'commission_rate', 'first_year_commission', 'annual_ongoing_commission'].includes(fieldName as string);
     }
     return false;
   };
