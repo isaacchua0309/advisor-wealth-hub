@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AuthProvider } from "@/context/AuthContext";
 import { AuthGuard } from "@/components/AuthGuard";
+import { ThemeProvider } from "@/context/ThemeContext";
 
 // Layouts
 import DashboardLayout from "./layouts/DashboardLayout";
@@ -31,26 +32,28 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <AuthProvider>
-          <AuthGuard>
-            <SidebarProvider>
-              <Routes>
-                <Route path="/auth/login" element={<Login />} />
-                <Route path="/auth/signup" element={<SignUp />} />
-                <Route path="/" element={<DashboardLayout />}>
-                  <Route index element={<Dashboard />} />
-                  <Route path="clients" element={<ClientList />} />
-                  <Route path="clients/:id" element={<ClientDetail />} />
-                  <Route path="policies" element={<Policies />} />
-                  <Route path="pipeline" element={<Pipeline />} />
-                  <Route path="tasks" element={<Tasks />} />
-                  <Route path="settings" element={<Settings />} />
-                </Route>
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </SidebarProvider>
-          </AuthGuard>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <AuthGuard>
+              <SidebarProvider>
+                <Routes>
+                  <Route path="/auth/login" element={<Login />} />
+                  <Route path="/auth/signup" element={<SignUp />} />
+                  <Route path="/" element={<DashboardLayout />}>
+                    <Route index element={<Dashboard />} />
+                    <Route path="clients" element={<ClientList />} />
+                    <Route path="clients/:id" element={<ClientDetail />} />
+                    <Route path="policies" element={<Policies />} />
+                    <Route path="pipeline" element={<Pipeline />} />
+                    <Route path="tasks" element={<Tasks />} />
+                    <Route path="settings" element={<Settings />} />
+                  </Route>
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </SidebarProvider>
+            </AuthGuard>
+          </AuthProvider>
+        </ThemeProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
