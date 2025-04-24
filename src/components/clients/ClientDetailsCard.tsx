@@ -1,17 +1,39 @@
 
-import { Client } from "@/types/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-interface ClientDetailsCardProps {
-  client: Client;
-}
-
-export function ClientDetailsCard({ client }: ClientDetailsCardProps) {
+export function ClientDetailsCard({ 
+  client, 
+  onPipelineStageChange 
+}: { 
+  client: Client; 
+  onPipelineStageChange?: (stage: Client['pipeline_stage']) => void 
+}) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-2xl font-semibold">{client.name}</CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-2xl font-semibold">{client.name}</CardTitle>
+          <div className="flex items-center space-x-2">
+            <span className="text-muted-foreground">Pipeline Stage:</span>
+            <Select 
+              value={client.pipeline_stage} 
+              onValueChange={onPipelineStageChange}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select stage" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Lead">Lead</SelectItem>
+                <SelectItem value="Contacted">Contacted</SelectItem>
+                <SelectItem value="Proposal Sent">Proposal Sent</SelectItem>
+                <SelectItem value="Negotiation">Negotiation</SelectItem>
+                <SelectItem value="Closed Won">Closed Won</SelectItem>
+                <SelectItem value="Closed Lost">Closed Lost</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

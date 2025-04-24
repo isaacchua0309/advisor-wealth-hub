@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -97,10 +96,13 @@ export function useClients() {
       client: CreateClientInput, 
       policies: CreatePolicyInput[] 
     }) => {
-      // First, insert the client
       const { data: clientData, error: clientError } = await supabase
         .from("clients")
-        .insert([{ ...client, user_id: user?.id }])
+        .insert([{ 
+          ...client, 
+          user_id: user?.id,
+          pipeline_stage: client.pipeline_stage || 'Lead'
+        }])
         .select()
         .single();
 

@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 import type { Client } from "@/types/client";
 import type { Policy } from "@/types/policy";
+import { Badge } from "@/components/ui/badge";
 
 interface ClientsTableProps {
   clients: Client[];
@@ -41,6 +41,18 @@ export function ClientsTable({ clients, policies = {}, isLoading, onClientSelect
         ? [...selectedClients, clientId] 
         : selectedClients.filter(id => id !== clientId)
       );
+    }
+  };
+
+  const getPipelineStageBadgeVariant = (stage: Client['pipeline_stage']) => {
+    switch (stage) {
+      case 'Lead': return 'secondary';
+      case 'Contacted': return 'outline';
+      case 'Proposal Sent': return 'default';
+      case 'Negotiation': return 'warning';
+      case 'Closed Won': return 'success';
+      case 'Closed Lost': return 'destructive';
+      default: return 'secondary';
     }
   };
 
@@ -76,6 +88,7 @@ export function ClientsTable({ clients, policies = {}, isLoading, onClientSelect
           <TableHead>Occupation</TableHead>
           <TableHead>Age Group</TableHead>
           <TableHead>Policies</TableHead>
+          <TableHead>Stage</TableHead>
           <TableHead></TableHead>
         </TableRow>
       </TableHeader>
@@ -126,6 +139,11 @@ export function ClientsTable({ clients, policies = {}, isLoading, onClientSelect
                 ) : (
                   <span className="text-xs text-muted-foreground">No policies</span>
                 )}
+              </TableCell>
+              <TableCell>
+                <Badge variant={getPipelineStageBadgeVariant(client.pipeline_stage)}>
+                  {client.pipeline_stage}
+                </Badge>
               </TableCell>
               <TableCell>
                 <Button variant="ghost" size="sm" onClick={() => handleRowClick(client.id)}>

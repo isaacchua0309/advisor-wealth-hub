@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
@@ -6,6 +5,8 @@ import { ArrowLeft } from "lucide-react";
 import { ClientDetailsCard } from "@/components/clients/ClientDetailsCard";
 import { PolicyList } from "@/components/clients/PolicyList";
 import { useClients } from "@/hooks/useClients";
+import { supabase } from "@/lib/supabase";
+import { toast } from "react-toastify";
 
 export default function ClientDetail() {
   const { id } = useParams();
@@ -49,6 +50,34 @@ export default function ClientDetail() {
     );
   }
 
+  const handlePipelineStageChange = async (newStage: Client['pipeline_stage']) => {
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .update({ pipeline_stage: newStage })
+        .eq('id', client.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Optimistically update the local state
+      queryClient.setQueryData(['clients', id], data);
+      
+      toast({
+        title: "Pipeline Stage Updated",
+        description: `Client stage changed to ${newStage}`,
+      });
+    } catch (error) {
+      console.error("Error updating pipeline stage:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update pipeline stage",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -66,7 +95,10 @@ export default function ClientDetail() {
       </div>
 
       <div className="flex flex-col gap-6">
-        <ClientDetailsCard client={client} />
+        <ClientDetailsCard 
+          client={client} 
+          onPipelineStageChange={handlePipelineStageChange} 
+        />
         
         <div>
           <h2 className="text-2xl font-bold mb-4">Policies</h2>

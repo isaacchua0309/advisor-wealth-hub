@@ -18,6 +18,7 @@ export type Database = {
           name: string
           occupation: string | null
           phone: string | null
+          pipeline_stage: Database["public"]["Enums"]["deal_stage"]
           updated_at: string
           user_id: string
         }
@@ -29,6 +30,7 @@ export type Database = {
           name: string
           occupation?: string | null
           phone?: string | null
+          pipeline_stage?: Database["public"]["Enums"]["deal_stage"]
           updated_at?: string
           user_id: string
         }
@@ -40,6 +42,7 @@ export type Database = {
           name?: string
           occupation?: string | null
           phone?: string | null
+          pipeline_stage?: Database["public"]["Enums"]["deal_stage"]
           updated_at?: string
           user_id?: string
         }
@@ -230,7 +233,13 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      deal_stage:
+        | "Lead"
+        | "Contacted"
+        | "Proposal Sent"
+        | "Negotiation"
+        | "Closed Won"
+        | "Closed Lost"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -345,6 +354,15 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      deal_stage: [
+        "Lead",
+        "Contacted",
+        "Proposal Sent",
+        "Negotiation",
+        "Closed Won",
+        "Closed Lost",
+      ],
+    },
   },
 } as const

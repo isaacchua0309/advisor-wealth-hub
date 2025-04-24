@@ -8,6 +8,7 @@ export interface Client {
   age_group: string | null;
   created_at: string;
   updated_at: string;
+  pipeline_stage: 'Lead' | 'Contacted' | 'Proposal Sent' | 'Negotiation' | 'Closed Won' | 'Closed Lost';
 }
 
 export interface CreateClientInput {
@@ -16,4 +17,5 @@ export interface CreateClientInput {
   phone?: string;
   occupation?: string;
   age_group?: string;
+  pipeline_stage?: 'Lead' | 'Contacted' | 'Proposal Sent' | 'Negotiation' | 'Closed Won' | 'Closed Lost';
 }
