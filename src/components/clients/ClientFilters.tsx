@@ -139,17 +139,17 @@ export function ClientFilters({
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Age Group</label>
                   <Select 
-                    value={localFilters.ageGroup || ""} 
+                    value={localFilters.ageGroup || undefined} 
                     onValueChange={(value) => setLocalFilters({
                       ...localFilters,
-                      ageGroup: value || null
+                      ageGroup: value === "" ? null : value
                     })}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Any age group" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Any age group</SelectItem>
+                      <SelectItem value="any">Any age group</SelectItem>
                       {ageGroups.map((group) => (
                         <SelectItem key={group} value={group}>
                           {group}
@@ -162,17 +162,17 @@ export function ClientFilters({
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Pipeline Stage</label>
                   <Select 
-                    value={localFilters.pipelineStage || ""} 
+                    value={localFilters.pipelineStage || undefined}
                     onValueChange={(value) => setLocalFilters({
                       ...localFilters,
-                      pipelineStage: value as Client['pipeline_stage'] || null
+                      pipelineStage: value === "any" ? null : value as Client['pipeline_stage']
                     })}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Any stage" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Any stage</SelectItem>
+                      <SelectItem value="any">Any stage</SelectItem>
                       {pipelineStages.map((stage) => (
                         <SelectItem key={stage} value={stage}>
                           {stage}

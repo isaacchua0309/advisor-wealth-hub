@@ -4,10 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import type { Client, CreateClientInput } from "@/types/client";
 import type { Policy, CreatePolicyInput } from "@/types/policy";
+import { useToast } from "@/hooks/use-toast";
 
 export function useClients() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   // Fetch all clients
   const { data: clients, isLoading: isLoadingClients } = useQuery({
@@ -134,27 +136,45 @@ export function useClients() {
 
   // Update client pipeline stage
   const updateClientPipelineStage = async (clientId: string, stage: string) => {
-    const { data, error } = await supabase
-      .from('clients')
-      .update({ pipeline_stage: stage })
-      .eq('id', clientId)
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    // Update the cache to reflect the changes
-    queryClient.setQueryData(['clients', clientId], data);
+    const pipelineStage = stage as Client['pipeline_stage'];
     
-    // Also update the client in the clients list cache
-    queryClient.setQueryData(['clients'], (oldData: Client[] | undefined) => {
-      if (!oldData) return oldData;
-      return oldData.map(client => 
-        client.id === clientId ? { ...client, pipeline_stage: stage as Client['pipeline_stage'] } : client
-      );
-    });
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .update({ pipeline_stage: pipelineStage })
+        .eq('id', clientId)
+        .select()
+        .single();
 
-    return data;
+      if (error) throw error;
+
+      // Update the cache to reflect the changes
+      queryClient.setQueryData(['clients', clientId], data);
+      
+      // Also update the client in the clients list cache
+      queryClient.setQueryData(['clients'], (oldData: Client[] | undefined) => {
+        if (!oldData) return oldData;
+        return oldData.map(client => 
+          client.id === clientId ? { ...client, pipeline_stage: pipelineStage } : client
+        );
+      });
+
+      // Show success toast
+      toast({
+        title: "Pipeline Stage Updated",
+        description: `Client stage changed to ${pipelineStage}`
+      });
+
+      return data;
+    } catch (error) {
+      console.error("Error updating pipeline stage:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update pipeline stage",
+        variant: "destructive"
+      });
+      throw error;
+    }
   };
 
   return {

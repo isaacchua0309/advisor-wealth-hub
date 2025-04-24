@@ -94,7 +94,7 @@ export function PipelineStageIndicator({
       <Select
         defaultValue={stage}
         onValueChange={(value) => handleStageChange(value as Client["pipeline_stage"])}
-        autoFocus
+        // Remove autoFocus prop as it's not expected by the Select component
       >
         <SelectTrigger className="w-36 h-8">
           <SelectValue placeholder={stage} />
