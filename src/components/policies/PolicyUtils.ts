@@ -1,60 +1,53 @@
 
-import type { Policy } from "@/types/policy";
-import { Badge } from "@/components/ui/badge";
+import { Policy } from "@/types/policy";
 
-// Get payment structure label from type
-export function getPaymentStructureLabel(type: Policy["payment_structure_type"]) {
-  const structures: Record<string, string> = {
-    single_premium: "Single Premium",
-    one_year_term: "One-Year Term",
-    regular_premium: "Regular Premium",
-    five_year_premium: "5-Year Premium",
-    ten_year_premium: "10-Year Premium",
-    lifetime_premium: "Lifetime Premium"
-  };
-  
-  return structures[type] || type;
-}
-
-// Format currency amount
-export function formatCurrency(amount: number | null | undefined): string {
-  if (amount === null || amount === undefined) return "N/A";
+// Format currency with dollar sign
+export const formatCurrency = (amount: number | null | undefined): string => {
+  if (amount === null || amount === undefined) return "—";
   return `$${amount.toLocaleString()}`;
-}
+};
 
-// Format percentage
-export function formatPercentage(percent: number | null | undefined): string {
-  if (percent === null || percent === undefined) return "N/A";
-  return `${percent}%`;
-}
+// Format percentage with % sign
+export const formatPercentage = (percentage: number | null | undefined): string => {
+  if (percentage === null || percentage === undefined) return "—";
+  return `${percentage}%`;
+};
 
-// Get status badge with appropriate color
-export function getStatusBadge(status: string | null) {
-  if (!status) return <Badge variant="outline">Unknown</Badge>;
+// Format date from ISO to readable format
+export const formatDate = (date: string | null | undefined): string => {
+  if (!date) return "—";
+  return new Date(date).toLocaleDateString();
+};
+
+// Get a color based on policy status
+export const getStatusColor = (status: string | null | undefined): string => {
+  if (!status) return "gray";
   
-  const statusMap: Record<string, { variant: "default" | "secondary" | "destructive" | "outline" }> = {
-    active: { variant: "default" },
-    inactive: { variant: "secondary" },
-    expired: { variant: "outline" },
-    cancelled: { variant: "destructive" },
-    pending: { variant: "outline" }
-  };
+  status = status.toLowerCase();
   
-  const statusConfig = statusMap[status.toLowerCase()] || { variant: "outline" };
+  if (status === "active") return "green";
+  if (status === "inactive" || status === "expired") return "red";
+  if (status === "pending") return "orange";
+  if (status === "cancelled") return "gray";
   
-  return (
-    <Badge variant={statusConfig.variant}>
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </Badge>
-  );
-}
+  return "gray";
+};
 
-// Calculate total value of a policy group
-export function calculateTotalPremium(policies: Policy[]): number {
-  return policies.reduce((sum, policy) => sum + (policy.premium || 0), 0);
-}
-
-// Calculate total commission of a policy group
-export function calculateTotalCommission(policies: Policy[]): number {
-  return policies.reduce((sum, policy) => sum + (policy.first_year_commission || 0), 0);
-}
+// Calculate policy time remaining (in percentage)
+export const calculateTimeRemaining = (policy: Policy): number => {
+  if (!policy.start_date || !policy.end_date) return 0;
+  
+  const startDate = new Date(policy.start_date);
+  const endDate = new Date(policy.end_date);
+  const currentDate = new Date();
+  
+  // If policy hasn't started yet
+  if (currentDate < startDate) return 0;
+  // If policy has ended
+  if (currentDate > endDate) return 100;
+  
+  const totalDuration = endDate.getTime() - startDate.getTime();
+  const elapsed = currentDate.getTime() - startDate.getTime();
+  
+  return Math.round((elapsed / totalDuration) * 100);
+};
