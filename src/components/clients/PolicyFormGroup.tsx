@@ -8,7 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { 
@@ -17,8 +17,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useForm } from "react-hook-form";
 import type { CreatePolicyInput } from "@/types/policy";
-import { calculateOngoingCommission } from "@/types/policy";
+import { usePolicyForm } from "@/hooks/usePolicyForm";
 
 interface PolicyFormGroupProps {
   policy: CreatePolicyInput;
@@ -29,21 +30,11 @@ interface PolicyFormGroupProps {
 
 export function PolicyFormGroup({ policy, onChange, onRemove, index }: PolicyFormGroupProps) {
   const [isOpen, setIsOpen] = useState(true);
+  const form = useForm<CreatePolicyInput>({
+    defaultValues: policy
+  });
 
-  useEffect(() => {
-    if (policy.premium && policy.commission_rate && policy.first_year_commission) {
-      const totalCommission = policy.premium * (policy.commission_rate / 100);
-      const ongoingCommission = calculateOngoingCommission(
-        totalCommission,
-        policy.first_year_commission,
-        policy.payment_structure_type
-      );
-      
-      if (policy.annual_ongoing_commission !== ongoingCommission) {
-        handleChange('annual_ongoing_commission', ongoingCommission);
-      }
-    }
-  }, [policy.premium, policy.commission_rate, policy.first_year_commission, policy.payment_structure_type]);
+  const { getValidation, isFieldDisabled } = usePolicyForm(form);
 
   const handleChange = (field: string, value: any) => {
     onChange({
@@ -141,6 +132,8 @@ export function PolicyFormGroup({ policy, onChange, onRemove, index }: PolicyFor
               placeholder="Premium amount"
               value={policy.premium === null ? "" : policy.premium}
               onChange={(e) => handleNumericChange("premium", e.target.value)}
+              {...getValidation('premium')}
+              disabled={isFieldDisabled('premium')}
             />
           </div>
 
@@ -152,6 +145,8 @@ export function PolicyFormGroup({ policy, onChange, onRemove, index }: PolicyFor
               placeholder="Policy value"
               value={policy.value === null ? "" : policy.value}
               onChange={(e) => handleNumericChange("value", e.target.value)}
+              {...getValidation('value')}
+              disabled={isFieldDisabled('value')}
             />
           </div>
 
@@ -162,6 +157,7 @@ export function PolicyFormGroup({ policy, onChange, onRemove, index }: PolicyFor
               type="date"
               value={policy.start_date || ""}
               onChange={(e) => handleChange("start_date", e.target.value)}
+              {...getValidation('start_date')}
             />
           </div>
 
@@ -172,6 +168,7 @@ export function PolicyFormGroup({ policy, onChange, onRemove, index }: PolicyFor
               type="date"
               value={policy.end_date || ""}
               onChange={(e) => handleChange("end_date", e.target.value)}
+              {...getValidation('end_date')}
             />
           </div>
 
@@ -230,6 +227,8 @@ export function PolicyFormGroup({ policy, onChange, onRemove, index }: PolicyFor
               placeholder="Commission rate"
               value={policy.commission_rate === null ? "" : policy.commission_rate}
               onChange={(e) => handleNumericChange("commission_rate", e.target.value)}
+              {...getValidation('commission_rate')}
+              disabled={isFieldDisabled('commission_rate')}
             />
           </div>
 
@@ -238,9 +237,9 @@ export function PolicyFormGroup({ policy, onChange, onRemove, index }: PolicyFor
             <Input
               id={`first-year-commission-${index}`}
               type="number"
-              placeholder="First year commission"
+              placeholder="Auto-calculated"
               value={policy.first_year_commission === null ? "" : policy.first_year_commission}
-              onChange={(e) => handleNumericChange("first_year_commission", e.target.value)}
+              disabled
             />
           </div>
 
@@ -249,7 +248,7 @@ export function PolicyFormGroup({ policy, onChange, onRemove, index }: PolicyFor
             <Input
               id={`annual-ongoing-commission-${index}`}
               type="number"
-              placeholder="Calculated automatically"
+              placeholder="Auto-calculated"
               value={policy.annual_ongoing_commission === null ? "" : policy.annual_ongoing_commission}
               disabled
             />
@@ -260,9 +259,10 @@ export function PolicyFormGroup({ policy, onChange, onRemove, index }: PolicyFor
             <Input
               id={`policy-duration-${index}`}
               type="number"
-              placeholder="Policy duration"
+              placeholder="Auto-calculated"
               value={policy.policy_duration === null ? "" : policy.policy_duration}
-              onChange={(e) => handleNumericChange("policy_duration", e.target.value)}
+              {...getValidation('policy_duration')}
+              disabled
             />
           </div>
         </div>

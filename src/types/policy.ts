@@ -1,4 +1,3 @@
-
 export interface Policy {
   id: string;
   client_id: string;
@@ -59,4 +58,33 @@ export const calculateOngoingCommission = (
     default:
       return 0;
   }
+};
+
+// Helper function to calculate policy duration between two dates
+export const calculatePolicyDuration = (startDate: string, endDate: string): number => {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const years = differenceInYears(end, start);
+  return Math.max(1, Math.min(30, years)); // Ensure duration is between 1 and 30 years
+};
+
+// Helper function to validate policy value limits
+export const validatePolicyLimits = (value: number, type: 'premium' | 'value', policyType: string): boolean => {
+  const limits = {
+    life: { maxPremium: 1000000, maxValue: 10000000 },
+    health: { maxPremium: 50000, maxValue: 1000000 },
+    auto: { maxPremium: 10000, maxValue: 500000 },
+    home: { maxPremium: 20000, maxValue: 2000000 },
+    disability: { maxPremium: 30000, maxValue: 1000000 },
+    liability: { maxPremium: 50000, maxValue: 5000000 },
+    business: { maxPremium: 500000, maxValue: 10000000 },
+    other: { maxPremium: 100000, maxValue: 1000000 }
+  };
+
+  if (!limits[policyType as keyof typeof limits]) return true;
+  const limit = type === 'premium' 
+    ? limits[policyType as keyof typeof limits].maxPremium 
+    : limits[policyType as keyof typeof limits].maxValue;
+  
+  return value <= limit;
 };
