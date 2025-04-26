@@ -1,9 +1,26 @@
+
 import { useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import type { CreatePolicyInput, Policy } from '@/types/policy';
 import { differenceInYears } from 'date-fns';
 
-export type FormType = CreatePolicyInput | Partial<Policy & { policy_name: string; policy_type: string; payment_structure_type: Policy['payment_structure_type'] }>;
+// Redefine FormType to make it compatible with both CreatePolicyInput and Partial<Policy>
+export type FormType = {
+  policy_name: string;
+  policy_type: string;
+  payment_structure_type: Policy['payment_structure_type'];
+  provider?: string | null;
+  policy_number?: string | null;
+  premium?: number | null;
+  value?: number | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  status?: string | null;
+  commission_rate?: number | null;
+  first_year_commission?: number | null;
+  annual_ongoing_commission?: number | null;
+  policy_duration?: number | null;
+};
 
 interface PolicyLimits {
   [key: string]: {

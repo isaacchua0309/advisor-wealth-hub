@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useForm } from "react-hook-form";
 import type { CreatePolicyInput } from "@/types/policy";
-import { usePolicyForm } from "@/hooks/usePolicyForm";
+import { usePolicyForm, FormType } from "@/hooks/usePolicyForm";
 
 interface PolicyFormGroupProps {
   policy: CreatePolicyInput;
@@ -30,8 +30,8 @@ interface PolicyFormGroupProps {
 
 export function PolicyFormGroup({ policy, onChange, onRemove, index }: PolicyFormGroupProps) {
   const [isOpen, setIsOpen] = useState(true);
-  const form = useForm<CreatePolicyInput>({
-    defaultValues: policy
+  const form = useForm<FormType>({
+    defaultValues: policy as unknown as FormType
   });
 
   const { getValidation, isFieldDisabled } = usePolicyForm(form);

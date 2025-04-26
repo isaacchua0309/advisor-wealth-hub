@@ -1,4 +1,6 @@
 
+import { differenceInYears } from 'date-fns';
+
 export interface Policy {
   id: string;
   client_id: string;
@@ -36,9 +38,6 @@ export interface CreatePolicyInput {
   annual_ongoing_commission?: number | null;
   policy_duration?: number | null;
 }
-
-// Import differenceInYears from date-fns
-import { differenceInYears } from 'date-fns';
 
 // Helper function to calculate ongoing commission based on payment structure
 export const calculateOngoingCommission = (
