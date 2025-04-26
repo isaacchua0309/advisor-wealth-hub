@@ -80,7 +80,7 @@ export function useClients() {
         status: item.status,
         created_at: item.created_at,
         updated_at: item.updated_at,
-        payment_structure_type: item.payment_structure_type,
+        payment_structure_type: item.payment_structure_type as Policy['payment_structure_type'],
         commission_rate: item.commission_rate,
         first_year_commission: item.first_year_commission,
         annual_ongoing_commission: item.annual_ongoing_commission,
