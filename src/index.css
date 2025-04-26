@@ -91,6 +91,12 @@
     @apply border-border;
   }
 
+  html, body, #root {
+    @apply h-full w-full;
+    margin: 0;
+    padding: 0;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-family: 'Inter', sans-serif;
@@ -188,5 +194,13 @@
   
   .badge-info {
     @apply bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300;
+  }
+
+  .global-policy-container {
+    @apply flex flex-col h-full w-full;
+  }
+  
+  .global-policy-content {
+    @apply flex-1 w-full overflow-hidden;
   }
 }

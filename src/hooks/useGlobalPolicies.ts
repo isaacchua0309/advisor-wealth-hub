@@ -26,9 +26,34 @@ export function useGlobalPolicies() {
     enabled: !!user,
   });
 
+  // Check if policy name already exists (case-insensitive)
+  const checkPolicyNameExists = async (policyName: string) => {
+    if (!user) return false;
+    
+    const { data, error } = await supabase
+      .from("global_policies")
+      .select("id")
+      .ilike("policy_name", policyName)
+      .eq("user_id", user.id);
+      
+    if (error) {
+      console.error("Error checking policy name:", error);
+      return false;
+    }
+    
+    return data && data.length > 0;
+  };
+
   // Create global policy
   const createGlobalPolicy = useMutation({
     mutationFn: async (policy: CreateGlobalPolicyInput) => {
+      // Check if policy name already exists (case-insensitive)
+      const exists = await checkPolicyNameExists(policy.policy_name);
+      
+      if (exists) {
+        throw new Error("This global policy name already exists. Please choose a different name.");
+      }
+      
       const { data, error } = await supabase
         .from("global_policies")
         .insert([{ ...policy, user_id: user?.id }])
@@ -45,11 +70,36 @@ export function useGlobalPolicies() {
         description: "The global policy has been created successfully.",
       });
     },
+    onError: (error: Error) => {
+      toast({
+        title: "Error Creating Policy",
+        description: error.message || "Failed to create global policy.",
+        variant: "destructive",
+      });
+    }
   });
 
   // Update global policy
   const updateGlobalPolicy = useMutation({
     mutationFn: async ({ id, data }: { id: string, data: Partial<GlobalPolicy> }) => {
+      // If policy name is being updated, check for duplicates
+      if (data.policy_name) {
+        // Get the current policy to check if name is actually changing
+        const { data: currentPolicy } = await supabase
+          .from("global_policies")
+          .select("policy_name")
+          .eq("id", id)
+          .single();
+        
+        // Only check for duplicates if the name is actually changing
+        if (currentPolicy && currentPolicy.policy_name.toLowerCase() !== data.policy_name.toLowerCase()) {
+          const exists = await checkPolicyNameExists(data.policy_name);
+          if (exists) {
+            throw new Error("This global policy name already exists. Please choose a different name.");
+          }
+        }
+      }
+      
       const { data: updatedPolicy, error } = await supabase
         .from("global_policies")
         .update(data)
@@ -67,6 +117,13 @@ export function useGlobalPolicies() {
         description: "The global policy has been updated successfully.",
       });
     },
+    onError: (error: Error) => {
+      toast({
+        title: "Error Updating Policy",
+        description: error.message || "Failed to update global policy.",
+        variant: "destructive",
+      });
+    }
   });
 
   // Delete global policy
@@ -97,6 +154,13 @@ export function useGlobalPolicies() {
         description: "The global policy has been deleted successfully.",
       });
     },
+    onError: (error: Error) => {
+      toast({
+        title: "Error Deleting Policy",
+        description: error.message || "Failed to delete global policy.",
+        variant: "destructive",
+      });
+    }
   });
 
   return {

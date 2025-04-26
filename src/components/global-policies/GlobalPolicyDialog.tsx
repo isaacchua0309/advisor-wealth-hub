@@ -6,7 +6,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useGlobalPolicies } from "@/hooks/useGlobalPolicies";
 import { GlobalPolicy, CreateGlobalPolicyInput } from "@/types/policy";
-import { Loader2 } from "lucide-react"; // Add the missing import
+import { Loader2, AlertCircle } from "lucide-react";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
@@ -14,6 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useForm } from "react-hook-form";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface GlobalPolicyDialogProps {
   open: boolean;
@@ -43,8 +53,12 @@ export default function GlobalPolicyDialog({
   const { createGlobalPolicy, updateGlobalPolicy } = useGlobalPolicies();
   const [formData, setFormData] = useState<CreateGlobalPolicyInput>(defaultPolicy);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
+  // Reset form data and error state when dialog opens/closes or mode changes
   useEffect(() => {
+    setError(null);
+    
     if (mode === "edit" && policy) {
       // Set form data from existing policy for edit mode
       setFormData({
@@ -69,6 +83,8 @@ export default function GlobalPolicyDialog({
       ...prev,
       [field]: value,
     }));
+    // Clear error when user makes changes
+    setError(null);
   };
 
   const handleNumericChange = (field: string, value: string) => {
@@ -77,11 +93,32 @@ export default function GlobalPolicyDialog({
       ...prev,
       [field]: numValue,
     }));
+    setError(null);
+  };
+
+  // Form validation
+  const validateForm = (): boolean => {
+    if (!formData.policy_name.trim()) {
+      setError("Policy name is required");
+      return false;
+    }
+    
+    if (!formData.policy_type) {
+      setError("Policy type is required");
+      return false;
+    }
+
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) return;
+    
     setIsSubmitting(true);
+    setError(null);
+    
     try {
       if (mode === "create") {
         await createGlobalPolicy.mutateAsync(formData);
@@ -94,6 +131,7 @@ export default function GlobalPolicyDialog({
       onOpenChange(false);
     } catch (error) {
       console.error("Error saving global policy:", error);
+      setError(error instanceof Error ? error.message : "An error occurred while saving the policy");
     } finally {
       setIsSubmitting(false);
     }
@@ -103,46 +141,55 @@ export default function GlobalPolicyDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="text-xl">
             {mode === "create" ? "Add Global Policy" : "Edit Global Policy"}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-muted-foreground">
             {mode === "create"
               ? "Create a new global policy template for your clients."
               : "Update an existing global policy template."}
           </DialogDescription>
         </DialogHeader>
 
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4 mr-2" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="policy_name">Policy Name</Label>
+              <Label htmlFor="policy_name" className="font-medium">Policy Name</Label>
               <Input
                 id="policy_name"
                 value={formData.policy_name}
                 onChange={(e) => handleChange("policy_name", e.target.value)}
                 placeholder="AIA Health Plus"
+                className="focus:ring-2 focus:ring-offset-1"
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="provider">Provider</Label>
+              <Label htmlFor="provider" className="font-medium">Provider</Label>
               <Input
                 id="provider"
                 value={formData.provider || ""}
                 onChange={(e) => handleChange("provider", e.target.value)}
                 placeholder="AIA"
+                className="focus:ring-2 focus:ring-offset-1"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="policy_type">Policy Type</Label>
+              <Label htmlFor="policy_type" className="font-medium">Policy Type</Label>
               <Select
                 value={formData.policy_type}
                 onValueChange={(value) => handleChange("policy_type", value)}
               >
-                <SelectTrigger id="policy_type">
+                <SelectTrigger id="policy_type" className="focus:ring-2 focus:ring-offset-1">
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -159,7 +206,7 @@ export default function GlobalPolicyDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="first_year_commission_rate">First Year Commission Rate (%)</Label>
+              <Label htmlFor="first_year_commission_rate" className="font-medium">First Year Commission Rate (%)</Label>
               <Input
                 id="first_year_commission_rate"
                 type="number"
@@ -168,11 +215,12 @@ export default function GlobalPolicyDialog({
                 placeholder="55"
                 min="0"
                 max="100"
+                className="focus:ring-2 focus:ring-offset-1"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="ongoing_commission_rate">Ongoing Commission Rate (%)</Label>
+              <Label htmlFor="ongoing_commission_rate" className="font-medium">Ongoing Commission Rate (%)</Label>
               <Input
                 id="ongoing_commission_rate"
                 type="number"
@@ -181,11 +229,12 @@ export default function GlobalPolicyDialog({
                 placeholder="10"
                 min="0"
                 max="100"
+                className="focus:ring-2 focus:ring-offset-1"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="commission_duration">Commission Duration (Years)</Label>
+              <Label htmlFor="commission_duration" className="font-medium">Commission Duration (Years)</Label>
               <Input
                 id="commission_duration"
                 type="number"
@@ -194,11 +243,12 @@ export default function GlobalPolicyDialog({
                 placeholder="5"
                 min="0"
                 max="100"
+                className="focus:ring-2 focus:ring-offset-1"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="policy_duration">Policy Duration (Years)</Label>
+              <Label htmlFor="policy_duration" className="font-medium">Policy Duration (Years)</Label>
               <Input
                 id="policy_duration"
                 type="number"
@@ -207,16 +257,17 @@ export default function GlobalPolicyDialog({
                 placeholder="10"
                 min="0"
                 max="100"
+                className="focus:ring-2 focus:ring-offset-1"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
+              <Label htmlFor="status" className="font-medium">Status</Label>
               <Select
-                value={formData.status}
+                value={formData.status || "Active"}
                 onValueChange={(value) => handleChange("status", value)}
               >
-                <SelectTrigger id="status">
+                <SelectTrigger id="status" className="focus:ring-2 focus:ring-offset-1">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -227,12 +278,12 @@ export default function GlobalPolicyDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="payment_structure_type">Payment Structure</Label>
+              <Label htmlFor="payment_structure_type" className="font-medium">Payment Structure</Label>
               <Select
                 value={formData.payment_structure_type}
                 onValueChange={(value) => handleChange("payment_structure_type", value)}
               >
-                <SelectTrigger id="payment_structure_type">
+                <SelectTrigger id="payment_structure_type" className="focus:ring-2 focus:ring-offset-1">
                   <SelectValue placeholder="Select payment structure" />
                 </SelectTrigger>
                 <SelectContent>
@@ -247,16 +298,21 @@ export default function GlobalPolicyDialog({
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="mt-6 gap-2">
             <Button 
               variant="outline" 
               type="button" 
               onClick={() => onOpenChange(false)}
               disabled={isSubmitting}
+              className="border-gray-300 hover:bg-muted"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button 
+              type="submit" 
+              disabled={isSubmitting}
+              className="min-w-[100px]"
+            >
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               {mode === "create" ? "Create Policy" : "Update Policy"}
             </Button>

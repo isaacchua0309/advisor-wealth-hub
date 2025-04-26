@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, PlusCircle, Pencil, Trash } from "lucide-react";
+import { Loader2, PlusCircle, Pencil, Trash, FileText } from "lucide-react";
 import GlobalPolicyDialog from "@/components/global-policies/GlobalPolicyDialog";
 import DeleteGlobalPolicyDialog from "@/components/global-policies/DeleteGlobalPolicyDialog";
 import { GlobalPolicy } from "@/types/policy";
@@ -35,21 +35,21 @@ export default function GlobalPolicies() {
   };
 
   return (
-    <div>
+    <div className="w-full h-full">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Global Policies</h2>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground mt-1">
             Create and manage global policy templates for your clients.
           </p>
         </div>
-        <Button onClick={() => setIsAddDialogOpen(true)}>
+        <Button onClick={() => setIsAddDialogOpen(true)} className="px-4">
           <PlusCircle className="mr-2 h-4 w-4" />
           Add Global Policy
         </Button>
       </div>
 
-      <Card>
+      <Card className="w-full overflow-hidden border shadow-sm">
         {isLoadingGlobalPolicies ? (
           <div className="flex items-center justify-center p-8">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -58,24 +58,28 @@ export default function GlobalPolicies() {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Policy Name</TableHead>
-                  <TableHead>Provider</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead className="text-right">First Year Commission</TableHead>
-                  <TableHead className="text-right">Ongoing Commission</TableHead>
-                  <TableHead className="text-right">Commission Duration</TableHead>
-                  <TableHead className="text-right">Policy Duration</TableHead>
-                  <TableHead>Status</TableHead>
+                <TableRow className="bg-muted/50 hover:bg-muted/60">
+                  <TableHead className="font-medium">Policy Name</TableHead>
+                  <TableHead className="font-medium">Provider</TableHead>
+                  <TableHead className="font-medium">Type</TableHead>
+                  <TableHead className="text-right font-medium">First Year Commission</TableHead>
+                  <TableHead className="text-right font-medium">Ongoing Commission</TableHead>
+                  <TableHead className="text-right font-medium">Commission Duration</TableHead>
+                  <TableHead className="text-right font-medium">Policy Duration</TableHead>
+                  <TableHead className="font-medium">Status</TableHead>
                   <TableHead className="w-[100px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {globalPolicies.map((policy) => (
-                  <TableRow key={policy.id}>
+                  <TableRow key={policy.id} className="hover:bg-muted/40 transition-colors">
                     <TableCell className="font-medium">{policy.policy_name}</TableCell>
                     <TableCell>{policy.provider || "-"}</TableCell>
-                    <TableCell>{policy.policy_type}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="capitalize">
+                        {policy.policy_type}
+                      </Badge>
+                    </TableCell>
                     <TableCell className="text-right">
                       {policy.first_year_commission_rate ? `${policy.first_year_commission_rate}%` : "-"}
                     </TableCell>
@@ -99,13 +103,14 @@ export default function GlobalPolicies() {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleEditPolicy(policy)}
+                          className="hover:bg-muted"
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="text-destructive hover:text-destructive"
+                          className="text-destructive hover:text-destructive/80 hover:bg-destructive/10"
                           onClick={() => handleDeletePolicy(policy)}
                         >
                           <Trash className="h-4 w-4" />
@@ -118,9 +123,16 @@ export default function GlobalPolicies() {
             </Table>
           </div>
         ) : (
-          <div className="p-8 text-center">
-            <p className="text-muted-foreground mb-4">No global policies found.</p>
-            <Button onClick={() => setIsAddDialogOpen(true)}>
+          <div className="p-12 text-center">
+            <div className="mx-auto w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
+              <FileText className="h-10 w-10 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-medium mb-2">No global policies found</h3>
+            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+              Create global policy templates to quickly apply standardized policies to your clients.
+            </p>
+            <Button onClick={() => setIsAddDialogOpen(true)} size="lg" className="px-6">
+              <PlusCircle className="mr-2 h-5 w-5" />
               Add Your First Global Policy
             </Button>
           </div>
