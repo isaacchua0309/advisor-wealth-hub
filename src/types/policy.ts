@@ -1,4 +1,3 @@
-
 export interface Policy {
   id: string;
   client_id: string;
@@ -75,10 +74,8 @@ export interface CreateGlobalPolicyInput {
   payment_structure_type: Policy['payment_structure_type'];
 }
 
-// Import differenceInYears from date-fns
 import { differenceInYears } from 'date-fns';
 
-// Helper function to calculate ongoing commission based on payment structure
 export const calculateOngoingCommission = (
   totalCommission: number,
   firstYearCommission: number,
@@ -102,15 +99,13 @@ export const calculateOngoingCommission = (
   }
 };
 
-// Helper function to calculate policy duration between two dates
 export const calculatePolicyDuration = (startDate: string, endDate: string): number => {
   const start = new Date(startDate);
   const end = new Date(endDate);
   const years = differenceInYears(end, start);
-  return Math.max(1, Math.min(30, years)); // Ensure duration is between 1 and 30 years
+  return Math.max(1, Math.min(30, years));
 };
 
-// Helper function to validate policy value limits
 export const validatePolicyLimits = (value: number, type: 'premium' | 'value', policyType: string): boolean => {
   const limits = {
     life: { maxPremium: 1000000, maxValue: 10000000 },
