@@ -17,7 +17,6 @@ import Dashboard from "./pages/Dashboard";
 import ClientList from "./pages/ClientList";
 import ClientDetail from "./pages/ClientDetail";
 import Policies from "./pages/Policies";
-import GlobalPolicies from "./pages/GlobalPolicies";
 import Pipeline from "./pages/Pipeline";
 import Tasks from "./pages/Tasks";
 import Settings from "./pages/Settings";
@@ -45,7 +44,6 @@ const App = () => (
                     <Route path="clients" element={<ClientList />} />
                     <Route path="clients/:id" element={<ClientDetail />} />
                     <Route path="policies" element={<Policies />} />
-                    <Route path="global-policies" element={<GlobalPolicies />} />
                     <Route path="pipeline" element={<Pipeline />} />
                     <Route path="tasks" element={<Tasks />} />
                     <Route path="settings" element={<Settings />} />

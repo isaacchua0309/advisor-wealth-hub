@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -13,17 +12,10 @@ export function useDashboard() {
   const { data: totalCommission, isLoading: isLoadingCommission } = useQuery({
     queryKey: ["totalCommission"],
     queryFn: async () => {
-      // Get all policies with their global policy relationship
+      // Get all policies
       const { data: policies, error } = await supabase
         .from("policies")
-        .select(`
-          first_year_commission,
-          annual_ongoing_commission,
-          start_date,
-          status,
-          policy_duration,
-          global_policies(*)
-        `);
+        .select("first_year_commission, annual_ongoing_commission, start_date, status, policy_duration");
       
       if (error) throw error;
       
@@ -133,14 +125,7 @@ export function useDashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("policies")
-        .select(`
-          start_date,
-          first_year_commission,
-          annual_ongoing_commission,
-          policy_duration,
-          status,
-          global_policies(*)
-        `);
+        .select("start_date, first_year_commission, annual_ongoing_commission, policy_duration, status");
       
       if (error) throw error;
 

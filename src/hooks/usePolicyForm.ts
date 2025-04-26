@@ -1,28 +1,9 @@
-
 import { useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import type { CreatePolicyInput, Policy } from '@/types/policy';
 import { differenceInYears } from 'date-fns';
 
-// Redefine FormType to make it compatible with both CreatePolicyInput and Partial<Policy>
-export type FormType = {
-  policy_name: string;
-  policy_type: string;
-  payment_structure_type: Policy['payment_structure_type'];
-  provider?: string | null;
-  policy_number?: string | null;
-  premium?: number | null;
-  value?: number | null;
-  start_date?: string | null;
-  end_date?: string | null;
-  status?: string | null;
-  commission_rate?: number | null;
-  first_year_commission_rate?: number | null;
-  first_year_commission?: number | null;
-  annual_ongoing_commission?: number | null;
-  policy_duration?: number | null;
-  global_policy_id?: string | null;
-};
+export type FormType = CreatePolicyInput | Partial<Policy & { policy_name: string; policy_type: string; payment_structure_type: Policy['payment_structure_type'] }>;
 
 interface PolicyLimits {
   [key: string]: {
@@ -50,7 +31,6 @@ export function usePolicyForm(form: UseFormReturn<FormType>) {
   const watchEndDate = form.watch('end_date');
   const watchPaymentStructure = form.watch('payment_structure_type');
   const watchStatus = form.watch('status');
-  const watchGlobalPolicyId = form.watch('global_policy_id');
 
   useEffect(() => {
     if (watchPremium && watchCommissionRate && !form.formState.isSubmitting) {
@@ -110,14 +90,8 @@ export function usePolicyForm(form: UseFormReturn<FormType>) {
   };
 
   const isFieldDisabled = (fieldName: keyof FormType) => {
-    // If a global policy is selected, disable fields that should be populated from global policy
-    if (watchGlobalPolicyId && ['policy_name', 'policy_type', 'payment_structure_type', 'premium', 'commission_rate', 
-                              'first_year_commission_rate', 'policy_duration', 'provider', 'value'].includes(fieldName as string)) {
-      return true;
-    }
-
     if (watchStatus === 'expired') {
-      return ['premium', 'commission_rate', 'first_year_commission_rate', 'first_year_commission', 'annual_ongoing_commission'].includes(fieldName as string);
+      return ['premium', 'commission_rate', 'first_year_commission', 'annual_ongoing_commission'].includes(fieldName as string);
     }
     return false;
   };

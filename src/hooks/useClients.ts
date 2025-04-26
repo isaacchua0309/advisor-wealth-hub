@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import type { Client, CreateClientInput } from "@/types/client";
 import type { Policy, CreatePolicyInput } from "@/types/policy";
-import type { GlobalPolicy } from "@/types/globalPolicy";
 import { useToast } from "@/hooks/use-toast";
 
 export function useClients() {
@@ -50,10 +49,7 @@ export function useClients() {
 
   // Fetch policies for all clients or a specific client
   const fetchPolicies = async (clientId?: string) => {
-    let query = supabase.from("policies").select(`
-      *,
-      global_policies(*)
-    `);
+    let query = supabase.from("policies").select("*");
     
     if (clientId) {
       query = query.eq("client_id", clientId);
@@ -62,43 +58,10 @@ export function useClients() {
     const { data, error } = await query.order("created_at", { ascending: false });
     
     if (error) throw error;
-    
-    // Type assertion to handle the global_policies join
-    return data.map(item => {
-      // Base policy fields
-      const policy: Policy = {
-        id: item.id,
-        client_id: item.client_id,
-        user_id: item.user_id,
-        policy_name: item.policy_name,
-        policy_type: item.policy_type,
-        policy_number: item.policy_number,
-        provider: item.provider,
-        premium: item.premium,
-        value: item.value,
-        start_date: item.start_date,
-        end_date: item.end_date,
-        status: item.status,
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-        payment_structure_type: item.payment_structure_type as Policy['payment_structure_type'],
-        commission_rate: item.commission_rate,
-        first_year_commission_rate: item.first_year_commission_rate || null, // Add this field
-        first_year_commission: item.first_year_commission,
-        annual_ongoing_commission: item.annual_ongoing_commission,
-        policy_duration: item.policy_duration,
-        global_policy_id: item.global_policy_id
-      };
-
-      // Add the global_policies field if it exists
-      return {
-        ...policy,
-        global_policies: item.global_policies as GlobalPolicy | null
-      };
-    });
+    return data as Policy[];
   };
 
-  // Get all policies with their global policy data
+  // Get all policies
   const { data: policies, isLoading: isLoadingPolicies } = useQuery({
     queryKey: ["policies"],
     queryFn: () => fetchPolicies(),
@@ -298,22 +261,13 @@ export function useClients() {
         .insert([{
           ...policy,
           client_id: clientId,
-          user_id: user?.id,
-          // Ensure global_policy_id is included
-          global_policy_id: policy.global_policy_id || null
+          user_id: user?.id
         }])
         .select()
         .single();
       
       if (error) throw error;
-      
-      // Type assertion to ensure the returned data includes global_policy_id
-      const policyWithGlobalId: Policy = {
-        ...data as any,
-        global_policy_id: (data as any).global_policy_id || null
-      };
-      
-      return policyWithGlobalId;
+      return data as Policy;
     },
     onSuccess: (data) => {
       // Invalidate queries to refresh policy data
@@ -338,24 +292,13 @@ export function useClients() {
     }) => {
       const { data: updatedPolicy, error } = await supabase
         .from("policies")
-        .update({
-          ...data,
-          // Ensure global_policy_id is included
-          global_policy_id: data.global_policy_id || null
-        })
+        .update(data)
         .eq("id", id)
         .select()
         .single();
       
       if (error) throw error;
-      
-      // Type assertion to ensure the returned data includes global_policy_id
-      const policyWithGlobalId: Policy = {
-        ...updatedPolicy as any,
-        global_policy_id: (updatedPolicy as any).global_policy_id || null
-      };
-      
-      return policyWithGlobalId;
+      return updatedPolicy as Policy;
     },
     onSuccess: (data) => {
       // Update policies in cache
@@ -380,14 +323,7 @@ export function useClients() {
         .single();
       
       if (error) throw error;
-      
-      // Type assertion to ensure the returned data includes global_policy_id
-      const policyWithGlobalId: Policy = {
-        ...data as any,
-        global_policy_id: (data as any).global_policy_id || null
-      };
-      
-      return policyWithGlobalId;
+      return data as Policy;
     },
     onSuccess: (data) => {
       // Update policies in cache

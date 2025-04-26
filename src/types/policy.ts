@@ -1,6 +1,4 @@
 
-import { differenceInYears } from 'date-fns';
-
 export interface Policy {
   id: string;
   client_id: string;
@@ -16,13 +14,10 @@ export interface Policy {
   created_at: string;
   updated_at: string;
   payment_structure_type: 'single_premium' | 'one_year_term' | 'regular_premium' | 'five_year_premium' | 'ten_year_premium' | 'lifetime_premium';
-  commission_rate: number | null;  // Ongoing commission rate
-  first_year_commission_rate: number | null;  // First year commission rate
-  first_year_commission: number | null;  // Calculated first year commission amount
+  commission_rate: number | null;
+  first_year_commission: number | null;
   annual_ongoing_commission: number | null;
   policy_duration: number | null;
-  global_policy_id: string | null;
-  user_id: string;
 }
 
 export interface CreatePolicyInput {
@@ -37,37 +32,32 @@ export interface CreatePolicyInput {
   status?: string | null;
   payment_structure_type: 'single_premium' | 'one_year_term' | 'regular_premium' | 'five_year_premium' | 'ten_year_premium' | 'lifetime_premium';
   commission_rate?: number | null;
-  first_year_commission_rate?: number | null;
   first_year_commission?: number | null;
   annual_ongoing_commission?: number | null;
   policy_duration?: number | null;
-  global_policy_id?: string | null;
 }
+
+// Import differenceInYears from date-fns
+import { differenceInYears } from 'date-fns';
 
 // Helper function to calculate ongoing commission based on payment structure
 export const calculateOngoingCommission = (
   totalCommission: number,
   firstYearCommission: number,
-  paymentStructureType: Policy['payment_structure_type'],
-  policyDuration: number | null
+  paymentStructureType: Policy['payment_structure_type']
 ): number => {
   const remainingCommission = totalCommission - firstYearCommission;
-  
-  // Default to 5 years if no duration specified
-  const effectiveDuration = policyDuration || 5;
 
   switch (paymentStructureType) {
     case 'single_premium':
     case 'one_year_term':
       return 0;
     case 'regular_premium':
-      return remainingCommission / (Math.min(effectiveDuration, 5) - 1);
+      return remainingCommission / 5;
     case 'five_year_premium':
       return remainingCommission / 4;
     case 'ten_year_premium':
-      return remainingCommission / 9;
     case 'lifetime_premium':
-      // For lifetime policies, distribute over a standard 5-year period
       return remainingCommission / 5;
     default:
       return 0;
