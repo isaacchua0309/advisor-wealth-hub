@@ -7,12 +7,9 @@ export interface GlobalPolicy {
   policy_name: string;
   policy_type: string;
   payment_structure_type: Policy['payment_structure_type'];
-  premium: number | null;
-  commission_rate: number | null;
+  commission_rate: number | null;  // Renamed from commission_rate to ongoing_commission_rate for clarity
+  first_year_commission_rate: number | null;  // New field for first year commission rate
   policy_duration: number | null;
-  start_date: string | null;
-  end_date: string | null;
-  value: number | null;
   provider: string | null;
   status: string | null;
   created_at: string;
@@ -23,12 +20,9 @@ export interface CreateGlobalPolicyInput {
   policy_name: string;
   policy_type: string;
   payment_structure_type: Policy['payment_structure_type'];
-  premium?: number | null;
-  commission_rate?: number | null;
+  commission_rate?: number | null;  // Renamed from commission_rate to ongoing_commission_rate
+  first_year_commission_rate?: number | null;  // New field
   policy_duration?: number | null;
-  start_date?: string | null;
-  end_date?: string | null;
-  value?: number | null;
   provider?: string | null;
   status?: string | null;
 }
@@ -40,20 +34,56 @@ export const createPolicyFromGlobal = (globalPolicy: GlobalPolicy, clientId: str
     policy_name: globalPolicy.policy_name,
     policy_type: globalPolicy.policy_type,
     payment_structure_type: globalPolicy.payment_structure_type,
-    premium: globalPolicy.premium,
     commission_rate: globalPolicy.commission_rate,
+    first_year_commission_rate: globalPolicy.first_year_commission_rate,
     policy_duration: globalPolicy.policy_duration,
-    start_date: globalPolicy.start_date,
-    end_date: globalPolicy.end_date,
-    value: globalPolicy.value,
     provider: globalPolicy.provider,
     status: globalPolicy.status,
     global_policy_id: globalPolicy.id,
-    // First year commission will be calculated based on premium and commission rate
-    first_year_commission: globalPolicy.premium && globalPolicy.commission_rate 
-      ? globalPolicy.premium * (globalPolicy.commission_rate / 100) 
-      : null,
-    // Ongoing commission will be calculated in the component
+    
+    // These fields will be specified when the policy is added to a client:
+    premium: null,
+    start_date: null,
+    end_date: null,
+    value: null,
+    
+    // First year commission will be calculated based on premium and first_year_commission_rate
+    // when the policy is added to a client
+    first_year_commission: null,
     annual_ongoing_commission: null
   };
+};
+
+// Helper function to calculate first year commission
+export const calculateFirstYearCommission = (premium: number | null, firstYearRate: number | null): number | null => {
+  if (premium === null || firstYearRate === null) {
+    return null;
+  }
+  return premium * (firstYearRate / 100);
+};
+
+// Helper function to calculate ongoing commission based on payment structure
+export const calculateOngoingCommission = (premium: number | null, ongoingRate: number | null, paymentStructureType: Policy['payment_structure_type']): number | null => {
+  if (premium === null || ongoingRate === null) {
+    return null;
+  }
+
+  const baseOngoingCommission = premium * (ongoingRate / 100);
+  
+  // Apply different calculations based on payment structure
+  switch (paymentStructureType) {
+    case 'single_premium':
+    case 'one_year_term':
+      return 0; // No ongoing commission for single premium or one-year policies
+    case 'regular_premium':
+      return baseOngoingCommission;
+    case 'five_year_premium':
+      return baseOngoingCommission;
+    case 'ten_year_premium':
+      return baseOngoingCommission;
+    case 'lifetime_premium':
+      return baseOngoingCommission;
+    default:
+      return 0;
+  }
 };

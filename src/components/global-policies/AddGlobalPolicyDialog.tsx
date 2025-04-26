@@ -40,23 +40,17 @@ const policySchema = z.object({
   policy_name: z.string().min(1, "Policy name is required"),
   policy_type: z.string().min(1, "Policy type is required"),
   payment_structure_type: z.string().min(1, "Payment structure is required"),
-  premium: z.preprocess(
-    (val) => (val === "" ? null : Number(val)), 
-    z.number().positive("Premium must be positive").optional().nullable()
-  ),
   commission_rate: z.preprocess(
+    (val) => (val === "" ? null : Number(val)), 
+    z.number().min(0, "Rate must be 0-100").max(100, "Rate must be 0-100").optional().nullable()
+  ),
+  first_year_commission_rate: z.preprocess(
     (val) => (val === "" ? null : Number(val)), 
     z.number().min(0, "Rate must be 0-100").max(100, "Rate must be 0-100").optional().nullable()
   ),
   policy_duration: z.preprocess(
     (val) => (val === "" ? null : Number(val)), 
     z.number().min(1, "Duration must be 1-30").max(30, "Duration must be 1-30").optional().nullable()
-  ),
-  start_date: z.string().optional().nullable(),
-  end_date: z.string().optional().nullable(),
-  value: z.preprocess(
-    (val) => (val === "" ? null : Number(val)), 
-    z.number().positive("Value must be positive").optional().nullable()
   ),
   provider: z.string().optional().nullable(),
   status: z.string().optional().nullable(),
@@ -77,12 +71,9 @@ export function AddGlobalPolicyDialog({
       policy_name: "",
       policy_type: "",
       payment_structure_type: "regular_premium",
-      premium: null,
       commission_rate: null,
+      first_year_commission_rate: null,
       policy_duration: null,
-      start_date: null,
-      end_date: null,
-      value: null,
       provider: "",
       status: "active",
     },
@@ -199,17 +190,17 @@ export function AddGlobalPolicyDialog({
               />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <FormField
                 control={form.control}
-                name="premium"
+                name="first_year_commission_rate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Premium Amount</FormLabel>
+                    <FormLabel>First Year Commission Rate (%)</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
-                        placeholder="0.00" 
+                        placeholder="0-100" 
                         {...field} 
                         value={field.value === null ? "" : field.value}
                         onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
@@ -225,7 +216,7 @@ export function AddGlobalPolicyDialog({
                 name="commission_rate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Commission Rate (%)</FormLabel>
+                    <FormLabel>Ongoing Commission Rate (%)</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
@@ -239,9 +230,7 @@ export function AddGlobalPolicyDialog({
                   </FormItem>
                 )}
               />
-            </div>
-            
-            <div className="grid grid-cols-3 gap-4">
+              
               <FormField
                 control={form.control}
                 name="policy_duration"
@@ -261,65 +250,9 @@ export function AddGlobalPolicyDialog({
                   </FormItem>
                 )}
               />
-              
-              <FormField
-                control={form.control}
-                name="start_date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Start Date</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="date" 
-                        {...field} 
-                        value={field.value || ""}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="end_date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>End Date</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="date" 
-                        {...field} 
-                        value={field.value || ""} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="value"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Sum Assured</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder="0.00" 
-                        {...field} 
-                        value={field.value === null ? "" : field.value}
-                        onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
+            <div className="grid grid-cols-1 gap-4">
               <FormField
                 control={form.control}
                 name="status"

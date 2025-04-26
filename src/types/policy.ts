@@ -1,3 +1,4 @@
+
 import { differenceInYears } from 'date-fns';
 
 export interface Policy {
@@ -15,7 +16,8 @@ export interface Policy {
   created_at: string;
   updated_at: string;
   payment_structure_type: 'single_premium' | 'one_year_term' | 'regular_premium' | 'five_year_premium' | 'ten_year_premium' | 'lifetime_premium';
-  commission_rate: number | null;
+  commission_rate: number | null;  // Ongoing commission rate
+  first_year_commission_rate: number | null;  // NEW: First year commission rate
   first_year_commission: number | null;
   annual_ongoing_commission: number | null;
   policy_duration: number | null;
@@ -35,6 +37,7 @@ export interface CreatePolicyInput {
   status?: string | null;
   payment_structure_type: 'single_premium' | 'one_year_term' | 'regular_premium' | 'five_year_premium' | 'ten_year_premium' | 'lifetime_premium';
   commission_rate?: number | null;
+  first_year_commission_rate?: number | null;
   first_year_commission?: number | null;
   annual_ongoing_commission?: number | null;
   policy_duration?: number | null;
@@ -45,20 +48,26 @@ export interface CreatePolicyInput {
 export const calculateOngoingCommission = (
   totalCommission: number,
   firstYearCommission: number,
-  paymentStructureType: Policy['payment_structure_type']
+  paymentStructureType: Policy['payment_structure_type'],
+  policyDuration: number | null
 ): number => {
   const remainingCommission = totalCommission - firstYearCommission;
+  
+  // Default to 5 years if no duration specified
+  const effectiveDuration = policyDuration || 5;
 
   switch (paymentStructureType) {
     case 'single_premium':
     case 'one_year_term':
       return 0;
     case 'regular_premium':
-      return remainingCommission / 5;
+      return remainingCommission / (Math.min(effectiveDuration, 5) - 1);
     case 'five_year_premium':
       return remainingCommission / 4;
     case 'ten_year_premium':
+      return remainingCommission / 9;
     case 'lifetime_premium':
+      // For lifetime policies, distribute over a standard 5-year period
       return remainingCommission / 5;
     default:
       return 0;

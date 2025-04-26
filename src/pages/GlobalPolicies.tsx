@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,7 +43,7 @@ export default function GlobalPolicies() {
   const [maxPremium, setMaxPremium] = useState(1000000);
 
   // Filter policies based on current filters
-  useState(() => {
+  useEffect(() => {
     if (!globalPolicies) {
       setFilteredPolicies([]);
       return;
