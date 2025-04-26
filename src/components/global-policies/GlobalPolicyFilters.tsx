@@ -70,13 +70,22 @@ export function GlobalPolicyFilters({
     });
   };
   
+  // Ensure that filters always has defined values with proper defaults to prevent runtime errors
+  const safeFilters = {
+    search: filters.search || "",
+    policyType: filters.policyType || "all",
+    paymentStructure: filters.paymentStructure || "all",
+    commissionRange: filters.commissionRange || [0, 100] as [number, number],
+    durationRange: filters.durationRange || [0, 30] as [number, number]
+  };
+  
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-grow">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            value={filters.search}
+            value={safeFilters.search}
             onChange={handleSearchChange}
             className="pl-9"
             placeholder="Search by policy name..."
@@ -111,7 +120,7 @@ export function GlobalPolicyFilters({
             <div>
               <Label>Policy Type</Label>
               <Select
-                value={filters.policyType}
+                value={safeFilters.policyType}
                 onValueChange={handlePolicyTypeChange}
               >
                 <SelectTrigger>
@@ -134,7 +143,7 @@ export function GlobalPolicyFilters({
             <div>
               <Label>Payment Structure</Label>
               <Select
-                value={filters.paymentStructure}
+                value={safeFilters.paymentStructure}
                 onValueChange={handlePaymentStructureChange}
               >
                 <SelectTrigger>
@@ -153,23 +162,23 @@ export function GlobalPolicyFilters({
             </div>
             
             <div className="space-y-2">
-              <Label>Commission Rate Range ({filters.commissionRange[0]}% - {filters.commissionRange[1]}%)</Label>
+              <Label>Commission Rate Range ({safeFilters.commissionRange[0]}% - {safeFilters.commissionRange[1]}%)</Label>
               <Slider
                 min={0}
                 max={100}
                 step={1}
-                value={[filters.commissionRange[0], filters.commissionRange[1]]}
+                value={[safeFilters.commissionRange[0], safeFilters.commissionRange[1]]}
                 onValueChange={handleCommissionRangeChange}
               />
             </div>
             
             <div className="space-y-2">
-              <Label>Duration Range ({filters.durationRange[0]} - {filters.durationRange[1]} years)</Label>
+              <Label>Duration Range ({safeFilters.durationRange[0]} - {safeFilters.durationRange[1]} years)</Label>
               <Slider
                 min={0}
                 max={30}
                 step={1}
-                value={[filters.durationRange[0], filters.durationRange[1]]}
+                value={[safeFilters.durationRange[0], safeFilters.durationRange[1]]}
                 onValueChange={handleDurationRangeChange}
               />
             </div>

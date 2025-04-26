@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -64,6 +65,7 @@ export function useClients() {
     
     // Type assertion to handle the global_policies join
     return data.map(item => {
+      // Base policy fields
       const policy: Policy = {
         id: item.id,
         client_id: item.client_id,
@@ -81,12 +83,14 @@ export function useClients() {
         updated_at: item.updated_at,
         payment_structure_type: item.payment_structure_type as Policy['payment_structure_type'],
         commission_rate: item.commission_rate,
-        first_year_commission_rate: item.first_year_commission_rate,
+        // Use item.first_year_commission instead of item.first_year_commission_rate
         first_year_commission: item.first_year_commission,
         annual_ongoing_commission: item.annual_ongoing_commission,
         policy_duration: item.policy_duration,
         global_policy_id: item.global_policy_id
       };
+
+      // Add the global_policies field if it exists
       return {
         ...policy,
         global_policies: item.global_policies as GlobalPolicy | null
