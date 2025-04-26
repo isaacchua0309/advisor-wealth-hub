@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useGlobalPolicies } from "@/hooks/useGlobalPolicies";
 import { GlobalPolicy, CreateGlobalPolicyInput } from "@/types/policy";
+import { Loader2 } from "lucide-react"; // Add the missing import
 import {
   Select,
   SelectContent,

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useClients } from "@/hooks/useClients";
 import { Policy } from "@/types/policy";
@@ -66,12 +65,8 @@ export default function Policies() {
       return;
     }
 
-    // Convert policies to the correct type before filtering
-    const typedPolicies = policies.map(policy => ({
-      ...policy,
-      // Ensure payment_structure_type is one of the allowed values
-      payment_structure_type: policy.payment_structure_type as Policy['payment_structure_type']
-    })) as Policy[];
+    // Make TypeScript happy by explicitly casting policies to Policy[]
+    const typedPolicies = policies as Policy[];
 
     const filtered = typedPolicies.filter(policy => {
       // Search by policy name (case insensitive)

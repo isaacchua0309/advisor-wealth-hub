@@ -1,4 +1,3 @@
-
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,7 +36,7 @@ export function PolicyFormGroup({ policy, onChange, onRemove, index }: PolicyFor
   });
   
   const { globalPolicies } = useGlobalPolicies();
-  const { getValidation } = usePolicyForm(form);
+  const { getValidation } = usePolicyForm(form as any);
 
   const handleChange = (field: string, value: any) => {
     onChange({
@@ -54,13 +53,11 @@ export function PolicyFormGroup({ policy, onChange, onRemove, index }: PolicyFor
     });
   };
 
-  // Handle global policy selection
   const handleGlobalPolicyChange = (globalPolicyId: string) => {
     if (!globalPolicies) return;
     
     const selectedPolicy = globalPolicies.find(p => p.id === globalPolicyId);
     if (selectedPolicy) {
-      // Update the policy with values from the global policy
       const updatedPolicy = {
         ...policy,
         global_policy_id: globalPolicyId,
@@ -71,7 +68,6 @@ export function PolicyFormGroup({ policy, onChange, onRemove, index }: PolicyFor
         ongoing_commission_rate: selectedPolicy.ongoing_commission_rate,
         commission_duration: selectedPolicy.commission_duration,
         policy_duration: selectedPolicy.policy_duration,
-        // Calculate first year commission and annual ongoing commission if premium is already set
         first_year_commission: policy.premium && selectedPolicy.first_year_commission_rate 
           ? (policy.premium * selectedPolicy.first_year_commission_rate / 100) 
           : null,
@@ -84,24 +80,19 @@ export function PolicyFormGroup({ policy, onChange, onRemove, index }: PolicyFor
     }
   };
 
-  // Calculate commissions when premium or commission rates change
   useEffect(() => {
     if (policy.premium !== null && policy.premium !== undefined) {
-      // Calculate first year commission
       if (policy.commission_rate !== null && policy.commission_rate !== undefined) {
         const firstYearCommission = policy.premium * policy.commission_rate / 100;
         
-        // Only update if different to avoid loops
         if (policy.first_year_commission !== firstYearCommission) {
           handleChange('first_year_commission', firstYearCommission);
         }
       }
       
-      // Calculate annual ongoing commission
       if (policy.ongoing_commission_rate !== null && policy.ongoing_commission_rate !== undefined) {
         const ongoingCommission = policy.premium * policy.ongoing_commission_rate / 100;
         
-        // Only update if different to avoid loops
         if (policy.annual_ongoing_commission !== ongoingCommission) {
           handleChange('annual_ongoing_commission', ongoingCommission);
         }
@@ -129,7 +120,6 @@ export function PolicyFormGroup({ policy, onChange, onRemove, index }: PolicyFor
 
       <CollapsibleContent className="pt-4 space-y-4">
         <div className="grid grid-cols-2 gap-4">
-          {/* Global Policy Selector */}
           <div className="space-y-2 col-span-2">
             <div className="flex items-center gap-2">
               <Label htmlFor={`global-policy-${index}`}>Global Policy Template</Label>
@@ -319,7 +309,6 @@ export function PolicyFormGroup({ policy, onChange, onRemove, index }: PolicyFor
             </Select>
           </div>
 
-          {/* Commission Fields */}
           <div className="col-span-2 pt-2 border-t">
             <h5 className="font-medium mb-4">Commission Details</h5>
             <div className="grid grid-cols-2 gap-4">

@@ -85,8 +85,9 @@ export function useClients() {
       if (error) throw error;
       return data.map(policy => ({
         ...policy,
-        payment_structure_type: policy.payment_structure_type as Policy['payment_structure_type']
-      }));
+        payment_structure_type: policy.payment_structure_type as Policy['payment_structure_type'],
+        global_policies: policy.global_policies || null
+      })) as unknown as Policy[];
     },
     enabled: !!user,
   });

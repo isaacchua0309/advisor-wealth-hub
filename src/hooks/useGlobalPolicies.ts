@@ -20,7 +20,8 @@ export function useGlobalPolicies() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as GlobalPolicy[];
+      // Explicitly cast the data to GlobalPolicy[] to ensure type safety
+      return data as unknown as GlobalPolicy[];
     },
     enabled: !!user,
   });
@@ -35,7 +36,7 @@ export function useGlobalPolicies() {
         .single();
 
       if (error) throw error;
-      return data as GlobalPolicy;
+      return data as unknown as GlobalPolicy;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["global_policies"] });
@@ -57,7 +58,7 @@ export function useGlobalPolicies() {
         .single();
 
       if (error) throw error;
-      return updatedPolicy as GlobalPolicy;
+      return updatedPolicy as unknown as GlobalPolicy;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["global_policies"] });
@@ -69,7 +70,7 @@ export function useGlobalPolicies() {
   });
 
   // Delete global policy
-  const deleteGlobalPolicy = useMutation({
+  const deletePolicy = useMutation({
     mutationFn: async (id: string) => {
       // First, update any policies that reference this global policy
       const { error: updateError } = await supabase
@@ -103,6 +104,6 @@ export function useGlobalPolicies() {
     isLoadingGlobalPolicies,
     createGlobalPolicy,
     updateGlobalPolicy,
-    deleteGlobalPolicy,
+    deleteGlobalPolicy: deletePolicy,
   };
 }

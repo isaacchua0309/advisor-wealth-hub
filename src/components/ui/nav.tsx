@@ -16,7 +16,9 @@ interface NavProps {
 }
 
 export function Nav({ links, showLabels = true }: NavProps) {
-  const { collapsed } = useSidebar();
+  const sidebar = useSidebar();
+  // Use optional chaining to avoid errors if collapsed doesn't exist
+  const collapsed = sidebar?.collapsed || false;
   const shouldShowLabels = showLabels && !collapsed;
   
   return (
