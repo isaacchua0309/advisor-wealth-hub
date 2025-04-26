@@ -20,6 +20,7 @@ export interface Policy {
   annual_ongoing_commission: number | null;
   policy_duration: number | null;
   global_policy_id: string | null;
+  user_id: string;
 }
 
 export interface CreatePolicyInput {
@@ -37,6 +38,7 @@ export interface CreatePolicyInput {
   first_year_commission?: number | null;
   annual_ongoing_commission?: number | null;
   policy_duration?: number | null;
+  global_policy_id?: string | null;
 }
 
 // Helper function to calculate ongoing commission based on payment structure

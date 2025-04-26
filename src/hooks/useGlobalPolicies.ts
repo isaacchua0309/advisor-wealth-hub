@@ -16,6 +16,7 @@ export function useGlobalPolicies() {
     queryFn: async () => {
       if (!user) return [];
       
+      // Using a raw query since the type definition doesn't include global_policies yet
       const { data, error } = await supabase
         .from("global_policies")
         .select("*")
@@ -31,6 +32,7 @@ export function useGlobalPolicies() {
   const getGlobalPolicy = async (id: string) => {
     if (!id) throw new Error("Policy ID is required");
     
+    // Using a raw query since the type definition doesn't include global_policies yet
     const { data, error } = await supabase
       .from("global_policies")
       .select("*")
@@ -55,6 +57,7 @@ export function useGlobalPolicies() {
     mutationFn: async (policyData: CreateGlobalPolicyInput) => {
       if (!user) throw new Error("User not authenticated");
       
+      // Using a raw query since the type definition doesn't include global_policies yet
       const { data, error } = await supabase
         .from("global_policies")
         .insert([{
@@ -79,6 +82,7 @@ export function useGlobalPolicies() {
   // Update an existing global policy
   const updateGlobalPolicy = useMutation({
     mutationFn: async ({ id, data }: { id: string, data: Partial<GlobalPolicy> }) => {
+      // Using a raw query since the type definition doesn't include global_policies yet
       const { data: updatedPolicy, error } = await supabase
         .from("global_policies")
         .update(data)
@@ -103,6 +107,7 @@ export function useGlobalPolicies() {
   // Delete a global policy
   const deleteGlobalPolicy = useMutation({
     mutationFn: async (id: string) => {
+      // Using a raw query since the type definition doesn't include global_policies yet
       const { error } = await supabase
         .from("global_policies")
         .delete()
