@@ -19,7 +19,7 @@ import { GlobalPolicy } from "@/types/globalPolicy";
 import { EditGlobalPolicyDialog } from "@/components/global-policies/EditGlobalPolicyDialog";
 import { DeleteGlobalPolicyDialog } from "@/components/global-policies/DeleteGlobalPolicyDialog";
 import { formatCurrency, formatPercentage, formatDate } from "@/components/policies/PolicyUtils";
-import { edit, trash } from "lucide-react";
+import { Edit, Trash } from "lucide-react";
 
 interface GlobalPolicyTableProps {
   policies: GlobalPolicy[];
@@ -76,14 +76,14 @@ export function GlobalPolicyTable({ policies }: GlobalPolicyTableProps) {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => setEditingPolicy(policy)}>
-                        <edit className="h-4 w-4 mr-2" />
+                        <Edit className="h-4 w-4 mr-2" />
                         Edit
                       </DropdownMenuItem>
                       <DropdownMenuItem 
                         onClick={() => setDeletingPolicy(policy)}
                         className="text-destructive"
                       >
-                        <trash className="h-4 w-4 mr-2" />
+                        <Trash className="h-4 w-4 mr-2" />
                         Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>

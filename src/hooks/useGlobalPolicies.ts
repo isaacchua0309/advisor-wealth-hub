@@ -14,6 +14,8 @@ export function useGlobalPolicies() {
   const { data: globalPolicies, isLoading: isLoadingPolicies } = useQuery({
     queryKey: ["globalPolicies"],
     queryFn: async () => {
+      if (!user) return [];
+      
       const { data, error } = await supabase
         .from("global_policies")
         .select("*")
@@ -27,6 +29,8 @@ export function useGlobalPolicies() {
 
   // Fetch a single global policy by ID
   const getGlobalPolicy = async (id: string) => {
+    if (!id) throw new Error("Policy ID is required");
+    
     const { data, error } = await supabase
       .from("global_policies")
       .select("*")
@@ -49,11 +53,13 @@ export function useGlobalPolicies() {
   // Create a new global policy
   const createGlobalPolicy = useMutation({
     mutationFn: async (policyData: CreateGlobalPolicyInput) => {
+      if (!user) throw new Error("User not authenticated");
+      
       const { data, error } = await supabase
         .from("global_policies")
         .insert([{
           ...policyData,
-          user_id: user?.id
+          user_id: user.id
         }])
         .select()
         .single();

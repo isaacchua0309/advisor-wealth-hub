@@ -1,4 +1,3 @@
-
 import { differenceInYears } from 'date-fns';
 
 export interface Policy {
@@ -20,6 +19,7 @@ export interface Policy {
   first_year_commission: number | null;
   annual_ongoing_commission: number | null;
   policy_duration: number | null;
+  global_policy_id: string | null;
 }
 
 export interface CreatePolicyInput {
