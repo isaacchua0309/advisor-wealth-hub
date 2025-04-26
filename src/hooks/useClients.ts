@@ -83,7 +83,7 @@ export function useClients() {
         updated_at: item.updated_at,
         payment_structure_type: item.payment_structure_type as Policy['payment_structure_type'],
         commission_rate: item.commission_rate,
-        // Use item.first_year_commission instead of item.first_year_commission_rate
+        first_year_commission_rate: item.first_year_commission_rate || null, // Add this field
         first_year_commission: item.first_year_commission,
         annual_ongoing_commission: item.annual_ongoing_commission,
         policy_duration: item.policy_duration,

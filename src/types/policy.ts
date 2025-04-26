@@ -17,8 +17,8 @@ export interface Policy {
   updated_at: string;
   payment_structure_type: 'single_premium' | 'one_year_term' | 'regular_premium' | 'five_year_premium' | 'ten_year_premium' | 'lifetime_premium';
   commission_rate: number | null;  // Ongoing commission rate
-  first_year_commission_rate: number | null;  // NEW: First year commission rate
-  first_year_commission: number | null;
+  first_year_commission_rate: number | null;  // First year commission rate
+  first_year_commission: number | null;  // Calculated first year commission amount
   annual_ongoing_commission: number | null;
   policy_duration: number | null;
   global_policy_id: string | null;
