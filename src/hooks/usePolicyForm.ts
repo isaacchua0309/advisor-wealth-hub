@@ -20,6 +20,7 @@ export type FormType = {
   first_year_commission?: number | null;
   annual_ongoing_commission?: number | null;
   policy_duration?: number | null;
+  global_policy_id?: string | null;
 };
 
 interface PolicyLimits {
@@ -48,6 +49,7 @@ export function usePolicyForm(form: UseFormReturn<FormType>) {
   const watchEndDate = form.watch('end_date');
   const watchPaymentStructure = form.watch('payment_structure_type');
   const watchStatus = form.watch('status');
+  const watchGlobalPolicyId = form.watch('global_policy_id');
 
   useEffect(() => {
     if (watchPremium && watchCommissionRate && !form.formState.isSubmitting) {
@@ -107,6 +109,12 @@ export function usePolicyForm(form: UseFormReturn<FormType>) {
   };
 
   const isFieldDisabled = (fieldName: keyof FormType) => {
+    // If a global policy is selected, disable fields that should be populated from global policy
+    if (watchGlobalPolicyId && ['policy_name', 'policy_type', 'payment_structure_type', 'premium', 'commission_rate', 
+                              'policy_duration', 'provider', 'value'].includes(fieldName as string)) {
+      return true;
+    }
+
     if (watchStatus === 'expired') {
       return ['premium', 'commission_rate', 'first_year_commission', 'annual_ongoing_commission'].includes(fieldName as string);
     }

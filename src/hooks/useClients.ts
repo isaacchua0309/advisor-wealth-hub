@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -49,7 +48,10 @@ export function useClients() {
 
   // Fetch policies for all clients or a specific client
   const fetchPolicies = async (clientId?: string) => {
-    let query = supabase.from("policies").select("*");
+    let query = supabase.from("policies").select(`
+      *,
+      global_policies(*)
+    `);
     
     if (clientId) {
       query = query.eq("client_id", clientId);
@@ -58,10 +60,10 @@ export function useClients() {
     const { data, error } = await query.order("created_at", { ascending: false });
     
     if (error) throw error;
-    return data as Policy[];
+    return data as (Policy & { global_policies: GlobalPolicy | null })[];
   };
 
-  // Get all policies
+  // Get all policies with their global policy data
   const { data: policies, isLoading: isLoadingPolicies } = useQuery({
     queryKey: ["policies"],
     queryFn: () => fetchPolicies(),
