@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,7 +13,6 @@ export type GlobalPolicyFilters = {
   search: string;
   policyType: string;
   paymentStructure: string;
-  premiumRange: [number, number];
   commissionRange: [number, number];
   durationRange: [number, number];
 };
@@ -34,13 +32,9 @@ export default function GlobalPolicies() {
     search: "",
     policyType: "all",
     paymentStructure: "all",
-    premiumRange: [0, 1000000],
     commissionRange: [0, 100],
     durationRange: [0, 30],
   });
-
-  // Initial filter ranges based on data
-  const [maxPremium, setMaxPremium] = useState(1000000);
 
   // Filter policies based on current filters
   useEffect(() => {
@@ -62,11 +56,6 @@ export default function GlobalPolicies() {
       const paymentStructureMatch = filters.paymentStructure === "all" || 
         policy.payment_structure_type === filters.paymentStructure;
       
-      // Filter by premium range
-      const premiumMatch = !policy.premium || 
-        (policy.premium >= filters.premiumRange[0] && 
-         policy.premium <= filters.premiumRange[1]);
-      
       // Filter by commission rate
       const commissionMatch = !policy.commission_rate || 
         (policy.commission_rate >= filters.commissionRange[0] && 
@@ -78,7 +67,7 @@ export default function GlobalPolicies() {
          policy.policy_duration <= filters.durationRange[1]);
       
       return searchMatch && typeMatch && paymentStructureMatch && 
-        premiumMatch && commissionMatch && durationMatch;
+        commissionMatch && durationMatch;
     });
     
     setFilteredPolicies(filtered);
@@ -89,7 +78,6 @@ export default function GlobalPolicies() {
       search: "",
       policyType: "all",
       paymentStructure: "all",
-      premiumRange: [0, maxPremium],
       commissionRange: [0, 100],
       durationRange: [0, 30],
     });
@@ -115,7 +103,7 @@ export default function GlobalPolicies() {
           filters={filters} 
           setFilters={setFilters}
           clearFilters={clearFilters}
-          maxPremium={maxPremium}
+          maxPremium={1000000}
         />
       </Card>
       

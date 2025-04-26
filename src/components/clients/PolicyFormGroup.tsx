@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -60,26 +59,17 @@ export function PolicyFormGroup({ policy, onChange, onRemove, index, clientId }:
         form.setValue('policy_name', selectedPolicy.policy_name);
         form.setValue('policy_type', selectedPolicy.policy_type);
         form.setValue('payment_structure_type', selectedPolicy.payment_structure_type);
-        form.setValue('premium', selectedPolicy.premium);
-        form.setValue('value', selectedPolicy.value);
         form.setValue('provider', selectedPolicy.provider);
         form.setValue('commission_rate', selectedPolicy.commission_rate);
+        form.setValue('first_year_commission_rate', selectedPolicy.first_year_commission_rate);
         form.setValue('policy_duration', selectedPolicy.policy_duration);
-        form.setValue('start_date', selectedPolicy.start_date);
-        form.setValue('end_date', selectedPolicy.end_date);
         form.setValue('status', selectedPolicy.status);
-        
-        // Calculate first year commission
-        if (selectedPolicy.premium && selectedPolicy.commission_rate) {
-          const firstYearCommission = selectedPolicy.premium * (selectedPolicy.commission_rate / 100);
-          form.setValue('first_year_commission', firstYearCommission);
-        }
         
         // Notify parent component
         onChange(newPolicy as CreatePolicyInput);
       }
     }
-  }, [globalPolicyId, globalPolicies, form, clientId]);
+  }, [globalPolicyId, globalPolicies, form, clientId, onChange]);
 
   // Watch all form fields and update the parent component
   useEffect(() => {
