@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Table, 
@@ -38,9 +37,8 @@ export function GlobalPolicyTable({ policies }: GlobalPolicyTableProps) {
               <TableHead>Policy Name</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Provider</TableHead>
-              <TableHead className="text-right">Premium</TableHead>
-              <TableHead className="text-right">Sum Assured</TableHead>
               <TableHead className="text-right">Commission Rate</TableHead>
+              <TableHead className="text-right">First Year Commission Rate</TableHead>
               <TableHead>Payment Structure</TableHead>
               <TableHead>Duration</TableHead>
               <TableHead>Created Date</TableHead>
@@ -53,9 +51,8 @@ export function GlobalPolicyTable({ policies }: GlobalPolicyTableProps) {
                 <TableCell className="font-medium">{policy.policy_name}</TableCell>
                 <TableCell>{policy.policy_type}</TableCell>
                 <TableCell>{policy.provider || "—"}</TableCell>
-                <TableCell className="text-right">{formatCurrency(policy.premium)}</TableCell>
-                <TableCell className="text-right">{formatCurrency(policy.value)}</TableCell>
                 <TableCell className="text-right">{formatPercentage(policy.commission_rate)}</TableCell>
+                <TableCell className="text-right">{formatPercentage(policy.first_year_commission_rate)}</TableCell>
                 <TableCell>
                   {policy.payment_structure_type?.replace(/_/g, " ")}
                 </TableCell>

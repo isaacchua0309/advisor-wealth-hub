@@ -102,53 +102,44 @@ export type Database = {
         Row: {
           commission_rate: number | null
           created_at: string
-          end_date: string | null
+          first_year_commission_rate: number | null
           id: string
           payment_structure_type: string
           policy_duration: number | null
           policy_name: string
           policy_type: string
-          premium: number | null
           provider: string | null
-          start_date: string | null
           status: string | null
           updated_at: string
           user_id: string
-          value: number | null
         }
         Insert: {
           commission_rate?: number | null
           created_at?: string
-          end_date?: string | null
+          first_year_commission_rate?: number | null
           id?: string
           payment_structure_type: string
           policy_duration?: number | null
           policy_name: string
           policy_type: string
-          premium?: number | null
           provider?: string | null
-          start_date?: string | null
           status?: string | null
           updated_at?: string
           user_id: string
-          value?: number | null
         }
         Update: {
           commission_rate?: number | null
           created_at?: string
-          end_date?: string | null
+          first_year_commission_rate?: number | null
           id?: string
           payment_structure_type?: string
           policy_duration?: number | null
           policy_name?: string
           policy_type?: string
-          premium?: number | null
           provider?: string | null
-          start_date?: string | null
           status?: string | null
           updated_at?: string
           user_id?: string
-          value?: number | null
         }
         Relationships: []
       }
