@@ -66,7 +66,14 @@ export default function Policies() {
       return;
     }
 
-    const filtered = policies.filter(policy => {
+    // Convert policies to the correct type before filtering
+    const typedPolicies = policies.map(policy => ({
+      ...policy,
+      // Ensure payment_structure_type is one of the allowed values
+      payment_structure_type: policy.payment_structure_type as Policy['payment_structure_type']
+    })) as Policy[];
+
+    const filtered = typedPolicies.filter(policy => {
       // Search by policy name (case insensitive)
       const searchMatch = !filters.search || 
         policy.policy_name.toLowerCase().includes(filters.search.toLowerCase());

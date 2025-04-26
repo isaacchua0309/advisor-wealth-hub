@@ -1,52 +1,93 @@
+import { useState } from "react";
+import { Outlet, Link } from "react-router-dom";
 
-import { Outlet } from "react-router-dom";
-import { AppSidebar } from "@/components/AppSidebar";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { useEffect, useState } from "react";
-import { UserButton } from "@/components/UserButton";
-import { useToast } from "@/hooks/use-toast";
+import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarTrigger } from "@/components/ui/sidebar";
+import { UserButton } from "@/components/ui/user-button";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { Nav } from "@/components/ui/nav";
+import {
+  Home,
+  Users,
+  FileText,
+  PieChart,
+  Settings,
+  CheckSquare,
+  ClipboardList,
+} from "lucide-react";
 
 export default function DashboardLayout() {
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  useEffect(() => {
-    // Simulate data loading
-    const timer = setTimeout(() => {
-      setLoading(false);
-      toast({
-        title: "Welcome back!",
-        description: "Your dashboard is ready.",
-      });
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [toast]);
+  const mainNavItems = [
+    {
+      title: "Dashboard",
+      href: "/",
+      icon: Home,
+      tooltip: "Dashboard",
+    },
+    {
+      title: "Clients",
+      href: "/clients",
+      icon: Users,
+      tooltip: "Clients",
+    },
+    {
+      title: "Policies",
+      href: "/policies",
+      icon: FileText,
+      tooltip: "Policies",
+    },
+    {
+      title: "Global Policies",
+      href: "/global-policies",
+      icon: ClipboardList,
+      tooltip: "Global Policies",
+    },
+    {
+      title: "Pipeline",
+      href: "/pipeline",
+      icon: PieChart,
+      tooltip: "Pipeline",
+    },
+    {
+      title: "Tasks",
+      href: "/tasks",
+      icon: CheckSquare,
+      tooltip: "Tasks",
+    },
+    {
+      title: "Settings",
+      href: "/settings",
+      icon: Settings,
+      tooltip: "Settings",
+    },
+  ];
 
   return (
-    <div className="min-h-screen flex w-full bg-gray-50">
-      <AppSidebar />
-      <div className="flex-1 flex flex-col">
-        <header className="border-b bg-white p-4 flex justify-between items-center">
-          <div className="flex items-center">
-            <SidebarTrigger className="mr-4 md:hidden" />
-            <h1 className="text-xl font-semibold text-gray-800">AdvisorHub CRM</h1>
-          </div>
-          <div className="flex items-center space-x-4">
-            <UserButton />
-          </div>
+    <div className="flex min-h-screen bg-background">
+      <Sidebar>
+        <SidebarHeader className="flex items-center justify-center">
+          <Link to="/" className="flex items-center space-x-2">
+            <FileText className="h-6 w-6" />
+            <span className="font-bold">InsureTrack</span>
+          </Link>
+        </SidebarHeader>
+        <SidebarContent className="flex flex-col gap-4">
+          <Nav links={mainNavItems} />
+        </SidebarContent>
+        <SidebarFooter>
+          {/* User Button Here */}
+          <UserButton />
+          <ThemeToggle />
+        </SidebarFooter>
+      </Sidebar>
+      <div className="flex-1 overflow-auto">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-6">
+          <SidebarTrigger />
+          {/* Mobile Breadcrumb */}
         </header>
-        <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8">
-          {loading ? (
-            <div className="w-full h-full flex items-center justify-center">
-              <div className="animate-pulse text-center">
-                <div className="h-16 w-16 mx-auto rounded-full bg-primary/20 mb-4"></div>
-                <p className="text-muted-foreground">Loading your dashboard...</p>
-              </div>
-            </div>
-          ) : (
-            <Outlet />
-          )}
+        <main className="grid flex-1 items-start gap-4 p-6 md:gap-8">
+          <Outlet />
         </main>
       </div>
     </div>

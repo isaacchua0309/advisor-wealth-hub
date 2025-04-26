@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import type { GlobalPolicy } from "@/types/policy";
+import type { GlobalPolicy, CreateGlobalPolicyInput } from "@/types/policy";
 import { useToast } from "@/hooks/use-toast";
 
 export function useGlobalPolicies() {
@@ -27,7 +27,7 @@ export function useGlobalPolicies() {
 
   // Create global policy
   const createGlobalPolicy = useMutation({
-    mutationFn: async (policy: Omit<GlobalPolicy, "id" | "created_at" | "updated_at" | "user_id">) => {
+    mutationFn: async (policy: CreateGlobalPolicyInput) => {
       const { data, error } = await supabase
         .from("global_policies")
         .insert([{ ...policy, user_id: user?.id }])
@@ -35,7 +35,7 @@ export function useGlobalPolicies() {
         .single();
 
       if (error) throw error;
-      return data;
+      return data as GlobalPolicy;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["global_policies"] });
@@ -57,7 +57,7 @@ export function useGlobalPolicies() {
         .single();
 
       if (error) throw error;
-      return updatedPolicy;
+      return updatedPolicy as GlobalPolicy;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["global_policies"] });
@@ -71,6 +71,15 @@ export function useGlobalPolicies() {
   // Delete global policy
   const deleteGlobalPolicy = useMutation({
     mutationFn: async (id: string) => {
+      // First, update any policies that reference this global policy
+      const { error: updateError } = await supabase
+        .from("policies")
+        .update({ global_policy_id: null })
+        .eq("global_policy_id", id);
+
+      if (updateError) throw updateError;
+
+      // Then delete the global policy
       const { error } = await supabase
         .from("global_policies")
         .delete()
@@ -81,6 +90,7 @@ export function useGlobalPolicies() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["global_policies"] });
+      queryClient.invalidateQueries({ queryKey: ["policies"] });
       toast({
         title: "Global Policy Deleted",
         description: "The global policy has been deleted successfully.",

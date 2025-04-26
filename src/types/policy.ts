@@ -1,3 +1,4 @@
+
 export interface Policy {
   id: string;
   client_id: string;
@@ -22,6 +23,7 @@ export interface Policy {
   sum_invested: number | null;
   ongoing_commission_rate: number | null;
   commission_duration: number | null;
+  global_policies?: GlobalPolicy | null;
 }
 
 export interface GlobalPolicy {
@@ -37,6 +39,7 @@ export interface GlobalPolicy {
   status: string;
   created_at: string;
   updated_at: string;
+  payment_structure_type?: string;
 }
 
 export interface CreatePolicyInput {
@@ -58,6 +61,18 @@ export interface CreatePolicyInput {
   sum_invested?: number | null;
   ongoing_commission_rate?: number | null;
   commission_duration?: number | null;
+}
+
+export interface CreateGlobalPolicyInput {
+  policy_name: string;
+  policy_type: string;
+  provider?: string | null;
+  first_year_commission_rate?: number | null;
+  ongoing_commission_rate?: number | null;
+  commission_duration?: number | null;
+  policy_duration?: number | null;
+  status?: string;
+  payment_structure_type: Policy['payment_structure_type'];
 }
 
 // Import differenceInYears from date-fns

@@ -60,7 +60,7 @@ export function useClients() {
     return data as Policy[];
   };
 
-  // Get all policies
+  // Get all policies with their associated global policies
   const { data: policies, isLoading: isLoadingPolicies } = useQuery({
     queryKey: ["policies"],
     queryFn: async () => {
@@ -83,7 +83,10 @@ export function useClients() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data.map(policy => ({
+        ...policy,
+        payment_structure_type: policy.payment_structure_type as Policy['payment_structure_type']
+      }));
     },
     enabled: !!user,
   });
@@ -276,10 +279,21 @@ export function useClients() {
       clientId: string, 
       policy: CreatePolicyInput 
     }) => {
+      // Calculate commission amounts if not already set
+      let policyToInsert = { ...policy };
+      
+      if (policyToInsert.premium && policyToInsert.commission_rate && !policyToInsert.first_year_commission) {
+        policyToInsert.first_year_commission = policyToInsert.premium * policyToInsert.commission_rate / 100;
+      }
+      
+      if (policyToInsert.premium && policyToInsert.ongoing_commission_rate && !policyToInsert.annual_ongoing_commission) {
+        policyToInsert.annual_ongoing_commission = policyToInsert.premium * policyToInsert.ongoing_commission_rate / 100;
+      }
+      
       const { data, error } = await supabase
         .from("policies")
         .insert([{
-          ...policy,
+          ...policyToInsert,
           client_id: clientId,
           user_id: user?.id
         }])
@@ -301,7 +315,7 @@ export function useClients() {
     },
   });
 
-  // Update policy
+  // Update policy with commission calculations
   const updatePolicy = useMutation({
     mutationFn: async ({ 
       id, 
@@ -310,9 +324,26 @@ export function useClients() {
       id: string, 
       data: Partial<Policy> 
     }) => {
+      // Calculate commission amounts if premium or rates changed
+      let updatedData = { ...data };
+      
+      if (
+        (updatedData.premium !== undefined || updatedData.commission_rate !== undefined) &&
+        updatedData.premium && updatedData.commission_rate
+      ) {
+        updatedData.first_year_commission = updatedData.premium * updatedData.commission_rate / 100;
+      }
+      
+      if (
+        (updatedData.premium !== undefined || updatedData.ongoing_commission_rate !== undefined) &&
+        updatedData.premium && updatedData.ongoing_commission_rate
+      ) {
+        updatedData.annual_ongoing_commission = updatedData.premium * updatedData.ongoing_commission_rate / 100;
+      }
+      
       const { data: updatedPolicy, error } = await supabase
         .from("policies")
-        .update(data)
+        .update(updatedData)
         .eq("id", id)
         .select()
         .single();
