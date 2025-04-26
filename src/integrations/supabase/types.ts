@@ -98,15 +98,63 @@ export type Database = {
           },
         ]
       }
+      global_policies: {
+        Row: {
+          commission_rate: number | null
+          created_at: string
+          first_year_commission_rate: number | null
+          id: string
+          payment_structure_type: string
+          policy_duration: number | null
+          policy_name: string
+          policy_type: string
+          provider: string | null
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          commission_rate?: number | null
+          created_at?: string
+          first_year_commission_rate?: number | null
+          id?: string
+          payment_structure_type: string
+          policy_duration?: number | null
+          policy_name: string
+          policy_type: string
+          provider?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          commission_rate?: number | null
+          created_at?: string
+          first_year_commission_rate?: number | null
+          id?: string
+          payment_structure_type?: string
+          policy_duration?: number | null
+          policy_name?: string
+          policy_type?: string
+          provider?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       policies: {
         Row: {
           annual_ongoing_commission: number | null
           client_id: string
+          commission_duration: number | null
           commission_rate: number | null
           created_at: string
           end_date: string | null
           first_year_commission: number | null
+          global_policy_id: string | null
           id: string
+          ongoing_commission_rate: number | null
           payment_structure_type: string
           policy_duration: number | null
           policy_name: string
@@ -116,6 +164,7 @@ export type Database = {
           provider: string | null
           start_date: string | null
           status: string | null
+          sum_invested: number | null
           updated_at: string
           user_id: string
           value: number | null
@@ -123,11 +172,14 @@ export type Database = {
         Insert: {
           annual_ongoing_commission?: number | null
           client_id: string
+          commission_duration?: number | null
           commission_rate?: number | null
           created_at?: string
           end_date?: string | null
           first_year_commission?: number | null
+          global_policy_id?: string | null
           id?: string
+          ongoing_commission_rate?: number | null
           payment_structure_type: string
           policy_duration?: number | null
           policy_name: string
@@ -137,6 +189,7 @@ export type Database = {
           provider?: string | null
           start_date?: string | null
           status?: string | null
+          sum_invested?: number | null
           updated_at?: string
           user_id: string
           value?: number | null
@@ -144,11 +197,14 @@ export type Database = {
         Update: {
           annual_ongoing_commission?: number | null
           client_id?: string
+          commission_duration?: number | null
           commission_rate?: number | null
           created_at?: string
           end_date?: string | null
           first_year_commission?: number | null
+          global_policy_id?: string | null
           id?: string
+          ongoing_commission_rate?: number | null
           payment_structure_type?: string
           policy_duration?: number | null
           policy_name?: string
@@ -158,11 +214,19 @@ export type Database = {
           provider?: string | null
           start_date?: string | null
           status?: string | null
+          sum_invested?: number | null
           updated_at?: string
           user_id?: string
           value?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_global_policy"
+            columns: ["global_policy_id"]
+            isOneToOne: false
+            referencedRelation: "global_policies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "policies_client_id_fkey"
             columns: ["client_id"]
