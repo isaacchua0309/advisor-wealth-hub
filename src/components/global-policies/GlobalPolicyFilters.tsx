@@ -56,13 +56,6 @@ export function GlobalPolicyFilters({
     });
   };
   
-  const handlePremiumRangeChange = (values: number[]) => {
-    setFilters({
-      ...filters,
-      premiumRange: [values[0], values[1]] as [number, number]
-    });
-  };
-  
   const handleCommissionRangeChange = (values: number[]) => {
     setFilters({
       ...filters,
@@ -157,17 +150,6 @@ export function GlobalPolicyFilters({
                   <SelectItem value="lifetime_premium">Lifetime Premium</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Premium Range (${filters.premiumRange[0].toLocaleString()} - ${filters.premiumRange[1].toLocaleString()})</Label>
-              <Slider
-                min={0}
-                max={maxPremium}
-                step={1000}
-                value={[filters.premiumRange[0], filters.premiumRange[1]]}
-                onValueChange={handlePremiumRangeChange}
-              />
             </div>
             
             <div className="space-y-2">

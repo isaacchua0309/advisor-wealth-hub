@@ -17,6 +17,7 @@ export type FormType = {
   end_date?: string | null;
   status?: string | null;
   commission_rate?: number | null;
+  first_year_commission_rate?: number | null;
   first_year_commission?: number | null;
   annual_ongoing_commission?: number | null;
   policy_duration?: number | null;
@@ -111,12 +112,12 @@ export function usePolicyForm(form: UseFormReturn<FormType>) {
   const isFieldDisabled = (fieldName: keyof FormType) => {
     // If a global policy is selected, disable fields that should be populated from global policy
     if (watchGlobalPolicyId && ['policy_name', 'policy_type', 'payment_structure_type', 'premium', 'commission_rate', 
-                              'policy_duration', 'provider', 'value'].includes(fieldName as string)) {
+                              'first_year_commission_rate', 'policy_duration', 'provider', 'value'].includes(fieldName as string)) {
       return true;
     }
 
     if (watchStatus === 'expired') {
-      return ['premium', 'commission_rate', 'first_year_commission', 'annual_ongoing_commission'].includes(fieldName as string);
+      return ['premium', 'commission_rate', 'first_year_commission_rate', 'first_year_commission', 'annual_ongoing_commission'].includes(fieldName as string);
     }
     return false;
   };

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -61,7 +62,12 @@ export function PolicyFormGroup({ policy, onChange, onRemove, index, clientId }:
         form.setValue('payment_structure_type', selectedPolicy.payment_structure_type);
         form.setValue('provider', selectedPolicy.provider);
         form.setValue('commission_rate', selectedPolicy.commission_rate);
-        form.setValue('first_year_commission_rate', selectedPolicy.first_year_commission_rate);
+        
+        // Set first_year_commission_rate if it exists in the selected policy
+        if ('first_year_commission_rate' in selectedPolicy) {
+          form.setValue('first_year_commission_rate', selectedPolicy.first_year_commission_rate);
+        }
+        
         form.setValue('policy_duration', selectedPolicy.policy_duration);
         form.setValue('status', selectedPolicy.status);
         
