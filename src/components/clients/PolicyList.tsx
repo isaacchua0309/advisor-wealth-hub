@@ -1,10 +1,11 @@
+
 import { useState } from "react";
 import { Policy } from "@/types/policy";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2 } from "lucide-react";
-import { EditPolicyDialog } from "./EditPolicyDialog";
+import EditPolicyDialog from "./EditPolicyDialog"; // Changed to default import
 import { DeletePolicyDialog } from "./DeletePolicyDialog";
 import { AddPolicyDialog } from "./AddPolicyDialog";
 import { useClients } from "@/hooks/useClients";

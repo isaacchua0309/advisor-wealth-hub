@@ -42,9 +42,14 @@ const formSchema = z.object({
   start_date: z.string().optional(),
   end_date: z.string().optional(),
   status: z.string().optional(),
-  payment_structure_type: z.string().min(1, {
-    message: "Please select a payment structure.",
-  }),
+  payment_structure_type: z.enum([
+    'single_premium',
+    'one_year_term',
+    'regular_premium',
+    'five_year_premium',
+    'ten_year_premium',
+    'lifetime_premium'
+  ]),
   commission_rate: z.number().optional().nullable(),
   ongoing_commission_rate: z.number().optional().nullable(),
   commission_duration: z.number().optional().nullable(),
@@ -58,13 +63,13 @@ interface EditPolicyDialogProps {
   policy: Policy;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  clientId: string;
 }
 
-const EditPolicyDialog = ({ policy, open, onOpenChange, clientId }) => {
+export const EditPolicyDialog = ({ policy, open, onOpenChange }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { updatePolicy, deletePolicy } = useClients();
+  const clientId = policy.client_id;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -578,4 +583,5 @@ const EditPolicyDialog = ({ policy, open, onOpenChange, clientId }) => {
   );
 };
 
+// Add default export while keeping the named export
 export default EditPolicyDialog;
