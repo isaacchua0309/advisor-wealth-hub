@@ -251,24 +251,42 @@ export type Database = {
       profiles: {
         Row: {
           commission_goal: number | null
+          company_name: string | null
           created_at: string
+          default_currency: string | null
+          default_pipeline_stage: string | null
+          default_reminder_days: number | null
+          default_timezone: string | null
           email: string
           full_name: string
           id: string
+          notification_settings: Json | null
         }
         Insert: {
           commission_goal?: number | null
+          company_name?: string | null
           created_at?: string
+          default_currency?: string | null
+          default_pipeline_stage?: string | null
+          default_reminder_days?: number | null
+          default_timezone?: string | null
           email: string
           full_name: string
           id: string
+          notification_settings?: Json | null
         }
         Update: {
           commission_goal?: number | null
+          company_name?: string | null
           created_at?: string
+          default_currency?: string | null
+          default_pipeline_stage?: string | null
+          default_reminder_days?: number | null
+          default_timezone?: string | null
           email?: string
           full_name?: string
           id?: string
+          notification_settings?: Json | null
         }
         Relationships: []
       }

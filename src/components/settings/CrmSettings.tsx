@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,7 +56,7 @@ export function CrmSettings() {
   });
 
   // Fetch user's CRM settings on component mount
-  useState(() => {
+  useEffect(() => {
     const fetchSettings = async () => {
       if (!user) return;
       
@@ -84,7 +84,7 @@ export function CrmSettings() {
     };
     
     fetchSettings();
-  }, [user]);
+  }, [user, crmForm]);
 
   async function onSubmit(data: CrmFormValues) {
     if (!user) return;
