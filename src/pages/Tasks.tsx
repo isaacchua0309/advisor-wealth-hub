@@ -25,28 +25,33 @@ export default function Tasks() {
     search: ''
   });
 
-  // Check for overdue tasks on load and when tasks change
+  // Check for overdue tasks on load and when tasks change - only once
   useEffect(() => {
     if (tasks && tasks.length > 0) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
-      tasks.forEach(task => {
-        if (task.due_date && 
-            new Date(task.due_date) < today && 
-            task.status === 'pending') {
-          // Update status to overdue
+      const tasksToUpdate = tasks.filter(task => 
+        task.due_date && 
+        new Date(task.due_date) < today && 
+        task.status === 'pending'
+      );
+      
+      // Only update tasks that need updating to avoid infinite loops
+      if (tasksToUpdate.length > 0) {
+        // Update all tasks in one batch to minimize rerenders
+        tasksToUpdate.forEach(task => {
           updateTask.mutate({ 
             id: task.id!, 
             status: 'overdue' 
           }, {
-            // Silent update - no toast notification
+            // Disable toast notifications for automatic status updates
             onSuccess: () => {}
           });
-        }
-      });
+        });
+      }
     }
-  }, [tasks, updateTask]);
+  }, [tasks]);  // Only include tasks in dependency array, not updateTask
 
   const handleCreateTask = (task: Omit<Task, 'id' | 'user_id' | 'created_at'>) => {
     createTask.mutate({
@@ -93,13 +98,16 @@ export default function Tasks() {
   };
 
   const handleTaskStatusChange = (taskId: string, status: 'pending' | 'completed' | 'overdue') => {
-    updateTask.mutate({ id: taskId, status });
-    if (status === 'completed') {
-      toast({
-        title: "Task completed! 🎉",
-        description: "Keep up the great work!"
-      });
-    }
+    updateTask.mutate({ id: taskId, status }, {
+      onSuccess: () => {
+        if (status === 'completed') {
+          toast({
+            title: "Task completed! 🎉",
+            description: "Keep up the great work!"
+          });
+        }
+      }
+    });
   };
 
   const handleSelectTask = (taskId: string) => {

@@ -12,7 +12,7 @@ export function TaskKPICards({ tasks = [] }: TaskKPICardsProps) {
   
   const pendingTasks = tasks?.filter(task => task.status === 'pending').length || 0;
   
-  // Correctly calculate overdue tasks: due date is in the past AND not completed
+  // Overdue tasks: due date is in the past AND not completed
   const overdueTasks = tasks?.filter(task => {
     const dueDate = task.due_date ? new Date(task.due_date) : null;
     return dueDate && 
@@ -25,7 +25,7 @@ export function TaskKPICards({ tasks = [] }: TaskKPICardsProps) {
     return task.status === 'completed' && new Date(task.created_at) > weekAgo;
   }).length || 0;
   
-  // Correctly calculate high priority tasks: only count pending ones
+  // Only count pending high priority tasks (not completed ones)
   const highPriorityTasks = tasks?.filter(task => 
     task.priority === 'high' && task.status !== 'completed'
   ).length || 0;

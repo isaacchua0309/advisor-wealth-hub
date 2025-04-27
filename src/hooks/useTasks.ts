@@ -77,6 +77,14 @@ export function useTasks() {
         description: "Your new task has been added successfully.",
       });
     },
+    onError: (error) => {
+      console.error("Error creating task:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create task. Please try again.",
+        variant: "destructive",
+      });
+    }
   });
 
   // Update a task
@@ -97,11 +105,16 @@ export function useTasks() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      toast({
-        title: "Task Updated",
-        description: "Your task has been successfully updated.",
-      });
+      // Toast is only shown when explicitly called in the component
     },
+    onError: (error) => {
+      console.error("Error updating task:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update task. Please try again.",
+        variant: "destructive",
+      });
+    }
   });
 
   // Delete a task
@@ -122,6 +135,14 @@ export function useTasks() {
         description: "The task has been removed.",
       });
     },
+    onError: (error) => {
+      console.error("Error deleting task:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete task. Please try again.",
+        variant: "destructive",
+      });
+    }
   });
 
   return {

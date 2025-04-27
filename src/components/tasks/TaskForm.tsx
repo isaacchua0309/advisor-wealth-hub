@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -85,11 +86,12 @@ export function TaskForm({ initialTask, onSubmit, isSubmitting = false }: TaskFo
               {task.due_date ? format(task.due_date, "PPP") : "Pick a date"}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0">
+          <PopoverContent className="w-auto p-0 z-50" align="start">
             <Calendar
               mode="single"
               selected={task.due_date}
               onSelect={(date) => date && setTask({...task, due_date: date})}
+              className="pointer-events-auto" 
             />
           </PopoverContent>
         </Popover>
