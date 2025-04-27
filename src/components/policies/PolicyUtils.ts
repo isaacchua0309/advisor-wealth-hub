@@ -1,4 +1,3 @@
-
 import { Policy } from "@/types/policy";
 import { differenceInYears, addYears, format, getYear } from "date-fns";
 
@@ -126,20 +125,27 @@ export const isRenewingSoon = (policy: Policy, days: number = 90): boolean => {
 
 // Calculate commission for a specific year
 export const calculateCommissionForYear = (policy: Policy, year: number): number => {
-  if (!policy.start_date || !policy.commission_duration || !policy.annual_ongoing_commission) {
+  if (!policy.start_date || !policy.status || policy.status.toLowerCase() !== "active") {
     return 0;
   }
   
   const startDate = new Date(policy.start_date);
-  const startYear = getYear(startDate);
-  const maturityYear = startYear + policy.commission_duration;
+  const startYear = startDate.getFullYear();
   
-  // If the year is outside the commission duration, return 0
-  if (year < startYear || year > maturityYear) {
-    return 0;
+  // If it's the start year, return first year commission
+  if (year === startYear) {
+    return policy.first_year_commission || 0;
   }
   
-  return policy.annual_ongoing_commission;
+  // For ongoing commission, check if we're within the commission duration period
+  if (year > startYear && policy.commission_duration) {
+    const endYear = startYear + policy.commission_duration - 1; // -1 because duration includes the first year
+    if (year <= endYear) {
+      return policy.annual_ongoing_commission || 0;
+    }
+  }
+  
+  return 0;
 };
 
 // Calculate total commissions for all policies by year
@@ -158,6 +164,7 @@ export const calculateYearlyCommissions = (
     const year = startYear + i;
     let totalCommission = 0;
     
+    // For each year, sum up first-year and ongoing commissions across all policies
     activePolicies.forEach(policy => {
       totalCommission += calculateCommissionForYear(policy, year);
     });
