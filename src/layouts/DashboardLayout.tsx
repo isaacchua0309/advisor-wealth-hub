@@ -14,7 +14,10 @@ import {
   Settings,
   CheckSquare,
   ClipboardList,
-  PlusCircle
+  PlusCircle,
+  BriefcaseBusiness,
+  UserPlus,
+  FilePlus
 } from "lucide-react";
 
 export default function DashboardLayout() {
@@ -70,7 +73,7 @@ export default function DashboardLayout() {
       <Sidebar>
         <SidebarHeader className="flex items-center justify-center">
           <Link to="/" className="flex items-center space-x-2">
-            <FileText className="h-6 w-6" />
+            <BriefcaseBusiness className="h-6 w-6" />
             <span className="font-bold">InsureTrack</span>
           </Link>
         </SidebarHeader>
@@ -92,8 +95,15 @@ export default function DashboardLayout() {
               to="/clients/new"
               className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              <PlusCircle className="h-4 w-4" />
+              <UserPlus className="h-4 w-4" />
               <span className="hidden sm:inline">Add Client</span>
+            </Link>
+            <Link 
+              to="/global-policies"
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <FilePlus className="h-4 w-4" />
+              <span className="hidden sm:inline">Add Policy</span>
             </Link>
           </div>
         </header>
