@@ -7,6 +7,11 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,9 +28,10 @@ import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { useClients } from "@/hooks/useClients";
 import { useNavigate } from "react-router-dom";
-
+import { ChevronDown, ChevronUp } from "lucide-react";
 import type { Policy } from "@/types/policy";
 import { useGlobalPolicies } from "@/hooks/useGlobalPolicies";
+import { differenceInYears } from "date-fns";
 
 const formSchema = z.object({
   policy_name: z.string().min(2, {
@@ -36,11 +42,17 @@ const formSchema = z.object({
   }),
   policy_number: z.string().optional(),
   provider: z.string().optional(),
-  premium: z.number().optional().nullable(),
-  value: z.number().optional().nullable(),
+  premium: z.number({
+    required_error: "Premium is required",
+    invalid_type_error: "Premium must be a number",
+  }).positive("Premium must be greater than 0"),
+  value: z.number({
+    required_error: "Value is required",
+    invalid_type_error: "Value must be a number",
+  }).positive("Value must be greater than 0"),
   sum_invested: z.number().optional().nullable(),
-  start_date: z.string().optional(),
-  end_date: z.string().optional(),
+  start_date: z.string().min(1, "Start date is required"),
+  end_date: z.string().min(1, "End date is required"),
   status: z.string().optional(),
   payment_structure_type: z.enum([
     'single_premium',
@@ -49,14 +61,50 @@ const formSchema = z.object({
     'five_year_premium',
     'ten_year_premium',
     'lifetime_premium'
-  ]),
-  commission_rate: z.number().optional().nullable(),
-  ongoing_commission_rate: z.number().optional().nullable(),
-  commission_duration: z.number().optional().nullable(),
-  policy_duration: z.number().optional().nullable(),
-  first_year_commission: z.number().optional().nullable(),
-  annual_ongoing_commission: z.number().optional().nullable(),
-  global_policy_id: z.string().optional().nullable(),
+  ], {
+    required_error: "Please select a payment structure type",
+  }),
+  commission_rate: z.number()
+    .min(0, "Commission rate must be at least 0")
+    .max(100, "Commission rate cannot exceed 100%"),
+  ongoing_commission_rate: z.number()
+    .min(0, "Ongoing commission rate must be at least 0")
+    .max(100, "Ongoing commission rate cannot exceed 100%")
+    .nullable(),
+  commission_duration: z.number()
+    .min(1, "Commission duration must be at least 1 year")
+    .nullable(),
+  policy_duration: z.number()
+    .min(1, "Policy duration must be at least 1 year")
+    .nullable(),
+  first_year_commission: z.number().nullable(),
+  annual_ongoing_commission: z.number().nullable(),
+  global_policy_id: z.string().nullable(),
+}).refine((data) => {
+  if (data.commission_duration && data.policy_duration) {
+    return data.commission_duration <= data.policy_duration;
+  }
+  return true;
+}, {
+  message: "Commission duration cannot exceed policy duration",
+  path: ["commission_duration"],
+}).refine((data) => {
+  if (data.start_date && data.end_date) {
+    return new Date(data.end_date) > new Date(data.start_date);
+  }
+  return true;
+}, {
+  message: "End date must be after start date",
+  path: ["end_date"],
+}).refine((data) => {
+  if (data.start_date && data.end_date) {
+    const duration = differenceInYears(new Date(data.end_date), new Date(data.start_date));
+    return data.policy_duration === duration;
+  }
+  return true;
+}, {
+  message: "Policy duration must match the difference between start and end dates",
+  path: ["policy_duration"],
 });
 
 interface EditPolicyDialogProps {
@@ -70,6 +118,9 @@ export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPol
   const navigate = useNavigate();
   const { updatePolicy, deletePolicy } = useClients();
   const clientId = policy.client_id;
+  const [isBasicInfoOpen, setIsBasicInfoOpen] = React.useState(true);
+  const [isFinancialInfoOpen, setIsFinancialInfoOpen] = React.useState(true);
+  const [isCommissionDetailsOpen, setIsCommissionDetailsOpen] = React.useState(true);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -102,7 +153,7 @@ export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPol
     control,
     setValue,
     watch,
-    formState: { errors },
+    formState: { errors, isValid },
   } = form;
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
@@ -188,386 +239,522 @@ export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPol
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
+      <DialogContent className="max-h-[90vh] flex flex-col">
+        <DialogHeader className="sticky top-0 z-10 bg-background pb-4 border-b">
           <DialogTitle>Edit Policy</DialogTitle>
           <DialogDescription>
-            Make changes to your client's policy here. Click save when you're
-            done.
+            Make changes to your client's policy here. Click save when you're done.
           </DialogDescription>
         </DialogHeader>
-        
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="space-y-4 py-4 px-6">
-            <div className="space-y-2">
-              <Label htmlFor="global_policy_id">Global Policy Template</Label>
-              <Controller
-                name="global_policy_id"
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    value={field.value || "none"}
-                    onValueChange={(value) => {
-                      field.onChange(value === "none" ? null : value);
-                      handleGlobalPolicyChange(value === "none" ? "" : value);
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a global policy template" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None (Custom Policy)</SelectItem>
-                      {globalPolicies?.map((gp) => (
-                        <SelectItem key={gp.id} value={gp.id}>
-                          {gp.policy_name} ({gp.provider || "No Provider"})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="policy_name">Policy Name</Label>
-              <Controller
-                name="policy_name"
-                control={control}
-                render={({ field }) => (
-                  <Input
-                    id="policy_name"
-                    placeholder="Policy Name"
-                    {...field}
-                    value={field.value || ""}
-                    onChange={(e) => field.onChange(e.target.value)}
-                  />
-                )}
-              />
-              {errors.policy_name && (
-                <p className="text-sm text-red-500">{errors.policy_name.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="policy_type">Policy Type</Label>
-              <Controller
-                name="policy_type"
-                control={control}
-                render={({ field }) => (
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="life">Life Insurance</SelectItem>
-                      <SelectItem value="health">Health Insurance</SelectItem>
-                      <SelectItem value="auto">Auto Insurance</SelectItem>
-                      <SelectItem value="home">Home Insurance</SelectItem>
-                      <SelectItem value="disability">Disability Insurance</SelectItem>
-                      <SelectItem value="liability">Liability Insurance</SelectItem>
-                      <SelectItem value="business">Business Insurance</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {errors.policy_type && (
-                <p className="text-sm text-red-500">{errors.policy_type.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="policy_number">Policy Number</Label>
-              <Controller
-                name="policy_number"
-                control={control}
-                render={({ field }) => (
-                  <Input
-                    id="policy_number"
-                    placeholder="Policy Number"
-                    {...field}
-                    value={field.value || ""}
-                    onChange={(e) => field.onChange(e.target.value)}
-                  />
-                )}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="provider">Provider</Label>
-              <Controller
-                name="provider"
-                control={control}
-                render={({ field }) => (
-                  <Input
-                    id="provider"
-                    placeholder="Provider"
-                    {...field}
-                    value={field.value || ""}
-                    onChange={(e) => field.onChange(e.target.value)}
-                  />
-                )}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="premium">Premium</Label>
-              <Controller
-                name="premium"
-                control={control}
-                render={({ field }) => (
-                  <Input
-                    id="premium"
-                    type="number"
-                    placeholder="Premium"
-                    {...field}
-                    value={field.value === null ? "" : field.value}
-                    onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
-                  />
-                )}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="value">Value</Label>
-              <Controller
-                name="value"
-                control={control}
-                render={({ field }) => (
-                  <Input
-                    id="value"
-                    type="number"
-                    placeholder="Value"
-                    {...field}
-                    value={field.value === null ? "" : field.value}
-                    onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
-                  />
-                )}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="sum_invested">Sum Invested</Label>
-              <Controller
-                name="sum_invested"
-                control={control}
-                render={({ field }) => (
-                  <Input
-                    id="sum_invested"
-                    type="number"
-                    placeholder="Sum Invested"
-                    {...field}
-                    value={field.value === null ? "" : field.value}
-                    onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
-                  />
-                )}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="start_date">Start Date</Label>
-              <Controller
-                name="start_date"
-                control={control}
-                render={({ field }) => (
-                  <Input
-                    id="start_date"
-                    type="date"
-                    placeholder="Start Date"
-                    {...field}
-                    value={field.value || ""}
-                    onChange={(e) => field.onChange(e.target.value)}
-                  />
-                )}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="end_date">End Date</Label>
-              <Controller
-                name="end_date"
-                control={control}
-                render={({ field }) => (
-                  <Input
-                    id="end_date"
-                    type="date"
-                    placeholder="End Date"
-                    {...field}
-                    value={field.value || ""}
-                    onChange={(e) => field.onChange(e.target.value)}
-                  />
-                )}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Controller
-                name="status"
-                control={control}
-                render={({ field }) => (
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="expired">Expired</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="payment_structure_type">Payment Structure Type</Label>
-              <Controller
-                name="payment_structure_type"
-                control={control}
-                render={({ field }) => (
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a payment structure" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="single_premium">Single Premium</SelectItem>
-                      <SelectItem value="one_year_term">One-Year Term Policy</SelectItem>
-                      <SelectItem value="regular_premium">Regular Premium Policy</SelectItem>
-                      <SelectItem value="five_year_premium">5-Year Premium Payment</SelectItem>
-                      <SelectItem value="ten_year_premium">10-Year Premium Payment</SelectItem>
-                      <SelectItem value="lifetime_premium">Lifetime Premium Payment</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {errors.payment_structure_type && (
-                <p className="text-sm text-red-500">{errors.payment_structure_type.message}</p>
-              )}
-            </div>
-            
-            <div className="pt-4 border-t">
-              <h3 className="text-lg font-medium mb-4">Commission Details</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="commission_rate">First Year Commission Rate (%)</Label>
-                  <Controller
-                    name="commission_rate"
-                    control={control}
-                    render={({ field }) => (
-                      <Input
-                        id="commission_rate"
-                        type="number"
-                        placeholder="Commission rate"
-                        {...field}
-                        value={field.value === null ? "" : field.value}
-                        onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
-                      />
-                    )}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="first_year_commission">First Year Commission ($)</Label>
-                  <Controller
-                    name="first_year_commission"
-                    control={control}
-                    render={({ field }) => (
-                      <Input
-                        id="first_year_commission"
-                        type="number"
-                        placeholder="First year commission"
-                        readOnly
-                        {...field}
-                        value={field.value === null ? "" : field.value}
-                        className="bg-muted"
-                      />
-                    )}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="ongoing_commission_rate">Ongoing Commission Rate (%)</Label>
-                  <Controller
-                    name="ongoing_commission_rate"
-                    control={control}
-                    render={({ field }) => (
-                      <Input
-                        id="ongoing_commission_rate"
-                        type="number"
-                        placeholder="Ongoing commission rate"
-                        {...field}
-                        value={field.value === null ? "" : field.value}
-                        onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
-                      />
-                    )}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="annual_ongoing_commission">Annual Ongoing Commission ($)</Label>
-                  <Controller
-                    name="annual_ongoing_commission"
-                    control={control}
-                    render={({ field }) => (
-                      <Input
-                        id="annual_ongoing_commission"
-                        type="number"
-                        placeholder="Annual ongoing commission"
-                        readOnly
-                        {...field}
-                        value={field.value === null ? "" : field.value}
-                        className="bg-muted"
-                      />
-                    )}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="commission_duration">Commission Duration (Years)</Label>
-                  <Controller
-                    name="commission_duration"
-                    control={control}
-                    render={({ field }) => (
-                      <Input
-                        id="commission_duration"
-                        type="number"
-                        placeholder="Commission duration"
-                        {...field}
-                        value={field.value === null ? "" : field.value}
-                        onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
-                      />
-                    )}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="policy_duration">Policy Duration (Years)</Label>
-                  <Controller
-                    name="policy_duration"
-                    control={control}
-                    render={({ field }) => (
-                      <Input
-                        id="policy_duration"
-                        type="number"
-                        placeholder="Policy duration"
-                        {...field}
-                        value={field.value === null ? "" : field.value}
-                        onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
-                      />
-                    )}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
 
-          <DialogFooter className="mt-6">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="mr-2"
+        <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto">
+          <div className="space-y-6 py-4 px-6">
+            <Collapsible
+              open={isBasicInfoOpen}
+              onOpenChange={setIsBasicInfoOpen}
+              className="space-y-2"
             >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={handleDelete}
-              className="mr-2"
+              <CollapsibleTrigger className="flex items-center justify-between w-full">
+                <h3 className="text-lg font-semibold">Basic Information</h3>
+                {isBasicInfoOpen ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="global_policy_id">Global Policy Template</Label>
+                  <Controller
+                    name="global_policy_id"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        value={field.value || "none"}
+                        onValueChange={(value) => {
+                          field.onChange(value === "none" ? null : value);
+                          handleGlobalPolicyChange(value === "none" ? "" : value);
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a global policy template" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">None (Custom Policy)</SelectItem>
+                          {globalPolicies?.map((gp) => (
+                            <SelectItem key={gp.id} value={gp.id}>
+                              {gp.policy_name} ({gp.provider || "No Provider"})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="policy_name">Policy Name</Label>
+                  <Controller
+                    name="policy_name"
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        id="policy_name"
+                        placeholder="Policy Name"
+                        {...field}
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      />
+                    )}
+                  />
+                  {errors.policy_name && (
+                    <p className="text-sm text-red-500">{errors.policy_name.message}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="policy_type">Policy Type</Label>
+                  <Controller
+                    name="policy_type"
+                    control={control}
+                    render={({ field }) => (
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="life">Life Insurance</SelectItem>
+                          <SelectItem value="health">Health Insurance</SelectItem>
+                          <SelectItem value="auto">Auto Insurance</SelectItem>
+                          <SelectItem value="home">Home Insurance</SelectItem>
+                          <SelectItem value="disability">Disability Insurance</SelectItem>
+                          <SelectItem value="liability">Liability Insurance</SelectItem>
+                          <SelectItem value="business">Business Insurance</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  {errors.policy_type && (
+                    <p className="text-sm text-red-500">{errors.policy_type.message}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="policy_number">Policy Number</Label>
+                  <Controller
+                    name="policy_number"
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        id="policy_number"
+                        placeholder="Policy Number"
+                        {...field}
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      />
+                    )}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="provider">Provider</Label>
+                  <Controller
+                    name="provider"
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        id="provider"
+                        placeholder="Provider"
+                        {...field}
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      />
+                    )}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="premium">Premium</Label>
+                  <Controller
+                    name="premium"
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        id="premium"
+                        type="number"
+                        placeholder="Premium"
+                        {...field}
+                        value={field.value === null ? "" : field.value}
+                        onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
+                      />
+                    )}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="value">Value</Label>
+                  <Controller
+                    name="value"
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        id="value"
+                        type="number"
+                        placeholder="Value"
+                        {...field}
+                        value={field.value === null ? "" : field.value}
+                        onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
+                      />
+                    )}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sum_invested">Sum Invested</Label>
+                  <Controller
+                    name="sum_invested"
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        id="sum_invested"
+                        type="number"
+                        placeholder="Sum Invested"
+                        {...field}
+                        value={field.value === null ? "" : field.value}
+                        onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
+                      />
+                    )}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="start_date">Start Date</Label>
+                  <Controller
+                    name="start_date"
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        id="start_date"
+                        type="date"
+                        placeholder="Start Date"
+                        {...field}
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      />
+                    )}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="end_date">End Date</Label>
+                  <Controller
+                    name="end_date"
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        id="end_date"
+                        type="date"
+                        placeholder="End Date"
+                        {...field}
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      />
+                    )}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Controller
+                    name="status"
+                    control={control}
+                    render={({ field }) => (
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="expired">Expired</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="payment_structure_type">Payment Structure Type</Label>
+                  <Controller
+                    name="payment_structure_type"
+                    control={control}
+                    render={({ field }) => (
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a payment structure" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="single_premium">Single Premium</SelectItem>
+                          <SelectItem value="one_year_term">One-Year Term Policy</SelectItem>
+                          <SelectItem value="regular_premium">Regular Premium Policy</SelectItem>
+                          <SelectItem value="five_year_premium">5-Year Premium Payment</SelectItem>
+                          <SelectItem value="ten_year_premium">10-Year Premium Payment</SelectItem>
+                          <SelectItem value="lifetime_premium">Lifetime Premium Payment</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  {errors.payment_structure_type && (
+                    <p className="text-sm text-red-500">{errors.payment_structure_type.message}</p>
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            <Collapsible
+              open={isFinancialInfoOpen}
+              onOpenChange={setIsFinancialInfoOpen}
+              className="space-y-2"
             >
-              Delete
-            </Button>
-            <Button type="submit">Save Changes</Button>
-          </DialogFooter>
+              <CollapsibleTrigger className="flex items-center justify-between w-full">
+                <h3 className="text-lg font-semibold">Financial Information</h3>
+                {isFinancialInfoOpen ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="premium">Premium</Label>
+                  <Controller
+                    name="premium"
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        id="premium"
+                        type="number"
+                        placeholder="Premium"
+                        {...field}
+                        value={field.value === null ? "" : field.value}
+                        onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
+                      />
+                    )}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="value">Value</Label>
+                  <Controller
+                    name="value"
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        id="value"
+                        type="number"
+                        placeholder="Value"
+                        {...field}
+                        value={field.value === null ? "" : field.value}
+                        onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
+                      />
+                    )}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sum_invested">Sum Invested</Label>
+                  <Controller
+                    name="sum_invested"
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        id="sum_invested"
+                        type="number"
+                        placeholder="Sum Invested"
+                        {...field}
+                        value={field.value === null ? "" : field.value}
+                        onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
+                      />
+                    )}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="start_date">Start Date</Label>
+                  <Controller
+                    name="start_date"
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        id="start_date"
+                        type="date"
+                        placeholder="Start Date"
+                        {...field}
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      />
+                    )}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="end_date">End Date</Label>
+                  <Controller
+                    name="end_date"
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        id="end_date"
+                        type="date"
+                        placeholder="End Date"
+                        {...field}
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      />
+                    )}
+                  />
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            <Collapsible
+              open={isCommissionDetailsOpen}
+              onOpenChange={setIsCommissionDetailsOpen}
+              className="space-y-2"
+            >
+              <CollapsibleTrigger className="flex items-center justify-between w-full">
+                <h3 className="text-lg font-semibold">Commission Details</h3>
+                {isCommissionDetailsOpen ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="commission_rate">First Year Commission Rate (%)</Label>
+                    <Controller
+                      name="commission_rate"
+                      control={control}
+                      render={({ field }) => (
+                        <Input
+                          id="commission_rate"
+                          type="number"
+                          placeholder="Commission rate"
+                          {...field}
+                          value={field.value === null ? "" : field.value}
+                          onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
+                        />
+                      )}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="first_year_commission">First Year Commission ($)</Label>
+                    <Controller
+                      name="first_year_commission"
+                      control={control}
+                      render={({ field }) => (
+                        <Input
+                          id="first_year_commission"
+                          type="number"
+                          placeholder="First year commission"
+                          readOnly
+                          {...field}
+                          value={field.value === null ? "" : field.value}
+                          className="bg-muted"
+                        />
+                      )}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="ongoing_commission_rate">Ongoing Commission Rate (%)</Label>
+                    <Controller
+                      name="ongoing_commission_rate"
+                      control={control}
+                      render={({ field }) => (
+                        <Input
+                          id="ongoing_commission_rate"
+                          type="number"
+                          placeholder="Ongoing commission rate"
+                          {...field}
+                          value={field.value === null ? "" : field.value}
+                          onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
+                        />
+                      )}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="annual_ongoing_commission">Annual Ongoing Commission ($)</Label>
+                    <Controller
+                      name="annual_ongoing_commission"
+                      control={control}
+                      render={({ field }) => (
+                        <Input
+                          id="annual_ongoing_commission"
+                          type="number"
+                          placeholder="Annual ongoing commission"
+                          readOnly
+                          {...field}
+                          value={field.value === null ? "" : field.value}
+                          className="bg-muted"
+                        />
+                      )}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="commission_duration">Commission Duration (Years)</Label>
+                    <Controller
+                      name="commission_duration"
+                      control={control}
+                      render={({ field }) => (
+                        <Input
+                          id="commission_duration"
+                          type="number"
+                          placeholder="Commission duration"
+                          {...field}
+                          value={field.value === null ? "" : field.value}
+                          onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
+                        />
+                      )}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="policy_duration">Policy Duration (Years)</Label>
+                    <Controller
+                      name="policy_duration"
+                      control={control}
+                      render={({ field }) => (
+                        <Input
+                          id="policy_duration"
+                          type="number"
+                          placeholder="Policy duration"
+                          {...field}
+                          value={field.value === null ? "" : field.value}
+                          onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
+                        />
+                      )}
+                    />
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
         </form>
+
+        <DialogFooter className="sticky bottom-0 z-10 bg-background pt-4 border-t">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="mr-2"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={handleDelete}
+            className="mr-2"
+          >
+            Delete
+          </Button>
+          <Button 
+            type="submit"
+            disabled={!isValid}
+            onClick={handleSubmit(onSubmit)}
+          >
+            Save Changes
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
