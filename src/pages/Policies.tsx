@@ -1,13 +1,14 @@
+
 import { useState, useEffect } from "react";
 import { useClients } from "@/hooks/useClients";
 import { Policy } from "@/types/policy";
 import { Card } from "@/components/ui/card";
 import PolicyFilters from "@/components/policies/PolicyFilters";
-import PoliciesTable from "@/components/policies/PoliciesTable";
-import { Loader2 } from "lucide-react";
 import PolicyKPICards from "@/components/policies/PolicyKPICards";
 import CommissionProjectionChart from "@/components/policies/CommissionProjectionChart";
 import { calculateTotalExpectedCommission } from "@/components/policies/PolicyUtils";
+import YearFilter from "@/components/policies/YearFilter";
+import PolicyListContainer from "@/components/policies/PolicyListContainer";
 
 export type PolicyFilters = {
   search: string;
@@ -49,6 +50,7 @@ export default function Policies() {
   const [maxPremium, setMaxPremium] = useState(1000000);
   const [maxFirstYearCommission, setMaxFirstYearCommission] = useState(100000);
 
+  // Update max ranges based on actual policy data
   useEffect(() => {
     if (policies) {
       const maxPrem = Math.max(...policies.map(p => p.premium || 0), 1000);
@@ -65,6 +67,7 @@ export default function Policies() {
     }
   }, [policies]);
 
+  // Filter policies based on user selection
   useEffect(() => {
     if (!policies) {
       setFilteredPolicies([]);
@@ -126,6 +129,7 @@ export default function Policies() {
     setFilteredPolicies(filtered);
   }, [policies, filters, selectedYear]);
 
+  // Helper functions for filtering
   const isRenewingThisYear = (policy: Policy): boolean => {
     if (!policy.start_date) return false;
     
@@ -163,6 +167,7 @@ export default function Policies() {
     return year >= startYear;
   };
   
+  // Sort policies based on selected column and direction
   const sortPolicies = (policies: Policy[], sortBy: string, sortDirection: "asc" | "desc"): Policy[] => {
     return [...policies].sort((a, b) => {
       let valueA: any;
@@ -241,6 +246,18 @@ export default function Policies() {
     setSelectedYear(year === selectedYear ? null : year);
   };
 
+  const handleClearYear = () => {
+    setSelectedYear(null);
+  };
+
+  const handleSort = (column: string) => {
+    setFilters(prev => ({
+      ...prev,
+      sortBy: column,
+      sortDirection: prev.sortBy === column && prev.sortDirection === "asc" ? "desc" : "asc"
+    }));
+  };
+
   return (
     <div className="w-full max-w-full overflow-x-hidden">
       <div className="flex items-center justify-between mb-6">
@@ -278,51 +295,21 @@ export default function Policies() {
           maxFirstYearCommission={maxFirstYearCommission}
         />
         
-        {selectedYear && (
-          <div className="mt-4 p-2 bg-green-50 border border-green-200 rounded-md text-sm">
-            <span className="font-medium">Filtering policies active in year: {selectedYear}</span>
-            <button 
-              className="ml-2 text-green-600 hover:text-green-800 underline"
-              onClick={() => setSelectedYear(null)}
-            >
-              Clear year filter
-            </button>
-          </div>
-        )}
+        <YearFilter 
+          selectedYear={selectedYear} 
+          onClearYear={handleClearYear} 
+        />
       </Card>
       
       <div className="w-full max-w-full overflow-hidden">
-        {isLoadingPolicies ? (
-          <div className="flex items-center justify-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        ) : filteredPolicies && filteredPolicies.length > 0 ? (
-          <div className="w-full overflow-x-auto">
-            <PoliciesTable 
-              policies={filteredPolicies}
-              sortBy={filters.sortBy}
-              sortDirection={filters.sortDirection}
-              onSort={(column) => {
-                setFilters(prev => ({
-                  ...prev,
-                  sortBy: column,
-                  sortDirection: prev.sortBy === column && prev.sortDirection === "asc" ? "desc" : "asc"
-                }));
-              }}
-            />
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center h-64 border rounded-lg bg-gray-50">
-            <div className="text-center">
-              <h3 className="text-lg font-medium mb-2">No Policies Found</h3>
-              <p className="text-muted-foreground">
-                {policies && policies.length > 0 
-                  ? "No policies match your current filters. Try adjusting your search criteria."
-                  : "No policies have been created yet. Add policies to your clients to see them here."}
-              </p>
-            </div>
-          </div>
-        )}
+        <PolicyListContainer 
+          isLoadingPolicies={isLoadingPolicies}
+          policies={policies}
+          filteredPolicies={filteredPolicies}
+          sortBy={filters.sortBy}
+          sortDirection={filters.sortDirection}
+          onSort={handleSort}
+        />
       </div>
     </div>
   );

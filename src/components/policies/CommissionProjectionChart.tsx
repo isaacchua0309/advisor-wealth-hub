@@ -4,6 +4,7 @@ import { calculateYearlyCommissions, formatCurrency } from "./PolicyUtils";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
+import { useEffect, useState } from "react";
 
 interface CommissionProjectionChartProps {
   policies: Policy[];
@@ -18,6 +19,7 @@ export default function CommissionProjectionChart({
   onYearSelect,
   selectedYear 
 }: CommissionProjectionChartProps) {
+  const [isMobile, setIsMobile] = useState(false);
   const currentYear = new Date().getFullYear();
   const commissionData = calculateYearlyCommissions(policies, currentYear, years);
   
@@ -62,6 +64,20 @@ export default function CommissionProjectionChart({
     }
   };
   
+  // Check for mobile screens
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    
+    checkIfMobile();
+    window.addEventListener('resize', checkIfMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkIfMobile);
+    };
+  }, []);
+  
   return (
     <Card className="mb-8">
       <CardHeader>
@@ -92,7 +108,7 @@ export default function CommissionProjectionChart({
                   axisLine={false}
                   tickLine={false}
                   tick={{ fontSize: 12 }}
-                  interval={window.innerWidth < 768 ? 1 : 0} // Skip labels on mobile
+                  interval={isMobile ? 1 : 0} // Skip labels on mobile
                 />
                 <YAxis 
                   axisLine={false}
@@ -107,10 +123,11 @@ export default function CommissionProjectionChart({
                 <Bar 
                   dataKey="commission" 
                   name="Annual Commission" 
-                  fill={(data) => data.isSelected ? "#047857" : "var(--color-commission)"}
+                  fill="#10b981" // Use a fixed color
+                  className="[&.recharts-bar-rectangle]:data-[selected=true]:fill-emerald-800"
                   radius={[4, 4, 0, 0]}
                   // Dynamic bar width based on number of data points and screen size
-                  maxBarSize={window.innerWidth < 640 ? 20 : (commissionData.length > 6 ? 40 : 60)}
+                  maxBarSize={isMobile ? 20 : (commissionData.length > 6 ? 40 : 60)}
                   cursor={onYearSelect ? "pointer" : undefined}
                 />
               </BarChart>

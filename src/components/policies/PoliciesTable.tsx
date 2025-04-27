@@ -1,55 +1,15 @@
+
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
 import { Policy } from "@/types/policy";
 import { 
   Table, 
   TableBody, 
-  TableCell, 
-  TableHead, 
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem,
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
-import { 
-  ArrowDown, 
-  ArrowUp, 
-  ChevronDown, 
-  ExternalLink, 
-  Trash
-} from "lucide-react";
-import { DeletePolicyDialog } from "@/components/clients/DeletePolicyDialog";
-import { format } from "date-fns";
-import { 
-  Pagination, 
-  PaginationContent, 
-  PaginationItem, 
-  PaginationLink, 
-  PaginationNext, 
-  PaginationPrevious 
-} from "@/components/ui/pagination";
-import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { 
-  formatCurrency, 
-  formatPercentage, 
-  calculateTotalExpectedCommission, 
-  calculatePremiumToValueRatio,
-  calculatePolicyAge,
-  calculateCommissionMaturityDate,
-  calculateNextRenewalDate,
-  formatReadableDate
-} from "./PolicyUtils";
+import { PolicyTableHead } from "./PolicyTableHead";
+import PolicyTableRow from "./PolicyTableRow";
+import PaginationControls from "./PaginationControls";
 
 type SortColumn = 
   | "policy_name" 
@@ -81,9 +41,6 @@ export default function PoliciesTable({
   const [currentPage, setCurrentPage] = useState(1);
   const policiesPerPage = 10;
   
-  const [policyToDelete, setPolicyToDelete] = useState<Policy | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-
   const handleSort = (column: SortColumn) => {
     if (onSort) {
       onSort(column);
@@ -95,352 +52,160 @@ export default function PoliciesTable({
   const currentPolicies = policies.slice(indexOfFirstPolicy, indexOfLastPolicy);
   const totalPages = Math.ceil(policies.length / policiesPerPage);
   
-  const getPaymentStructureLabel = (type: Policy["payment_structure_type"]) => {
-    const structures = {
-      single_premium: "Single Premium",
-      one_year_term: "One-Year Term",
-      regular_premium: "Regular Premium",
-      five_year_premium: "5-Year Premium",
-      ten_year_premium: "10-Year Premium",
-      lifetime_premium: "Lifetime Premium"
-    };
-    
-    return structures[type] || type;
-  };
-  
-  const getStatusBadge = (status: string | null) => {
-    if (!status) return <Badge variant="outline">Unknown</Badge>;
-    
-    const statusMap: Record<string, { variant: "default" | "secondary" | "destructive" | "outline" }> = {
-      active: { variant: "default" },
-      inactive: { variant: "secondary" },
-      expired: { variant: "outline" },
-      cancelled: { variant: "destructive" },
-      pending: { variant: "outline" }
-    };
-    
-    const statusConfig = statusMap[status.toLowerCase()] || { variant: "outline" };
-    
-    return (
-      <Badge variant={statusConfig.variant}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </Badge>
-    );
-  };
-  
-  const SortIndicator = ({ column }: { column: string }) => {
-    if (sortBy !== column) return null;
-    
-    return sortDirection === "asc" ? (
-      <ArrowUp className="ml-1 h-4 w-4" />
-    ) : (
-      <ArrowDown className="ml-1 h-4 w-4" />
-    );
-  };
-
   return (
     <div className="space-y-4">
       <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead 
-                onClick={() => handleSort("policy_name")}
-                className="cursor-pointer hover:bg-muted/50 sticky left-0 bg-background z-10"
+              <PolicyTableHead 
+                column="policy_name"
+                sortBy={sortBy}
+                sortDirection={sortDirection as "asc" | "desc"}
+                onSort={handleSort}
+                className="sticky left-0 bg-background z-10"
               >
-                <div className="flex items-center">
-                  Policy Name
-                  <SortIndicator column="policy_name" />
-                </div>
-              </TableHead>
+                Policy Name
+              </PolicyTableHead>
               
-              <TableHead 
-                onClick={() => handleSort("policy_type")}
-                className="cursor-pointer hover:bg-muted/50 sticky left-[150px] bg-background z-10"
+              <PolicyTableHead 
+                column="policy_type"
+                sortBy={sortBy}
+                sortDirection={sortDirection as "asc" | "desc"}
+                onSort={handleSort}
+                className="sticky left-[150px] bg-background z-10"
               >
-                <div className="flex items-center">
-                  Policy Type
-                  <SortIndicator column="policy_type" />
-                </div>
-              </TableHead>
+                Policy Type
+              </PolicyTableHead>
               
-              <TableHead 
-                onClick={() => handleSort("provider")}
-                className="cursor-pointer hover:bg-muted/50"
+              <PolicyTableHead 
+                column="provider"
+                sortBy={sortBy}
+                sortDirection={sortDirection as "asc" | "desc"}
+                onSort={handleSort}
               >
-                <div className="flex items-center">
-                  Provider
-                  <SortIndicator column="provider" />
-                </div>
-              </TableHead>
+                Provider
+              </PolicyTableHead>
               
-              <TableHead 
-                onClick={() => handleSort("premium")}
-                className="cursor-pointer hover:bg-muted/50 text-right"
+              <PolicyTableHead 
+                column="premium"
+                sortBy={sortBy}
+                sortDirection={sortDirection as "asc" | "desc"}
+                onSort={handleSort}
+                className="text-right"
               >
-                <div className="flex items-center justify-end">
-                  Premium
-                  <SortIndicator column="premium" />
-                </div>
-              </TableHead>
+                Premium
+              </PolicyTableHead>
               
-              <TableHead 
-                onClick={() => handleSort("value")}
-                className="cursor-pointer hover:bg-muted/50 text-right"
+              <PolicyTableHead 
+                column="value"
+                sortBy={sortBy}
+                sortDirection={sortDirection as "asc" | "desc"}
+                onSort={handleSort}
+                className="text-right"
               >
-                <div className="flex items-center justify-end">
-                  Value
-                  <SortIndicator column="value" />
-                </div>
-              </TableHead>
+                Value
+              </PolicyTableHead>
               
-              <TableHead 
-                onClick={() => handleSort("first_year_commission")}
-                className="cursor-pointer hover:bg-muted/50 text-right"
+              <PolicyTableHead 
+                column="first_year_commission"
+                sortBy={sortBy}
+                sortDirection={sortDirection as "asc" | "desc"}
+                onSort={handleSort}
+                className="text-right"
               >
-                <div className="flex items-center justify-end">
-                  First Year Comm.
-                  <SortIndicator column="first_year_commission" />
-                </div>
-              </TableHead>
+                First Year Comm.
+              </PolicyTableHead>
               
-              <TableHead 
-                onClick={() => handleSort("annual_ongoing_commission")}
-                className="cursor-pointer hover:bg-muted/50 text-right"
+              <PolicyTableHead 
+                column="annual_ongoing_commission"
+                sortBy={sortBy}
+                sortDirection={sortDirection as "asc" | "desc"}
+                onSort={handleSort}
+                className="text-right"
               >
-                <div className="flex items-center justify-end">
-                  Annual Ongoing Comm.
-                  <SortIndicator column="annual_ongoing_commission" />
-                </div>
-              </TableHead>
+                Annual Ongoing Comm.
+              </PolicyTableHead>
               
-              <TableHead 
-                onClick={() => handleSort("total_expected_commission")}
-                className="cursor-pointer hover:bg-muted/50 text-right"
+              <PolicyTableHead 
+                column="total_expected_commission"
+                sortBy={sortBy}
+                sortDirection={sortDirection as "asc" | "desc"}
+                onSort={handleSort}
+                className="text-right"
               >
-                <div className="flex items-center justify-end">
-                  Total Expected Comm.
-                  <SortIndicator column="total_expected_commission" />
-                </div>
-              </TableHead>
+                Total Expected Comm.
+              </PolicyTableHead>
               
-              <TableHead className="text-right">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="flex items-center justify-end cursor-pointer hover:bg-muted/50"
-                           onClick={() => handleSort("premium_to_value_ratio")}>
-                        Premium/Value Ratio
-                        <SortIndicator column="premium_to_value_ratio" />
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Premium as a percentage of policy value</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </TableHead>
-              
-              <TableHead className="text-right">Payment Structure</TableHead>
-              
-              <TableHead 
-                onClick={() => handleSort("policy_age")}
-                className="cursor-pointer hover:bg-muted/50 text-right"
+              <PolicyTableHead 
+                column="premium_to_value_ratio"
+                sortBy={sortBy}
+                sortDirection={sortDirection as "asc" | "desc"}
+                onSort={handleSort}
+                className="text-right"
+                tooltip="Premium as a percentage of policy value"
               >
-                <div className="flex items-center justify-end">
-                  Policy Age
-                  <SortIndicator column="policy_age" />
-                </div>
-              </TableHead>
+                Premium/Value Ratio
+              </PolicyTableHead>
               
-              <TableHead 
-                onClick={() => handleSort("start_date")}
-                className="cursor-pointer hover:bg-muted/50"
+              <PolicyTableHead className="text-right">Payment Structure</PolicyTableHead>
+              
+              <PolicyTableHead 
+                column="policy_age"
+                sortBy={sortBy}
+                sortDirection={sortDirection as "asc" | "desc"}
+                onSort={handleSort}
+                className="text-right"
               >
-                <div className="flex items-center">
-                  Start Date
-                  <SortIndicator column="start_date" />
-                </div>
-              </TableHead>
+                Policy Age
+              </PolicyTableHead>
               
-              <TableHead>Next Renewal</TableHead>
-              
-              <TableHead>Commission Maturity</TableHead>
-              
-              <TableHead 
-                onClick={() => handleSort("status")}
-                className="cursor-pointer hover:bg-muted/50"
+              <PolicyTableHead 
+                column="start_date"
+                sortBy={sortBy}
+                sortDirection={sortDirection as "asc" | "desc"}
+                onSort={handleSort}
               >
-                <div className="flex items-center">
-                  Status
-                  <SortIndicator column="status" />
-                </div>
-              </TableHead>
+                Start Date
+              </PolicyTableHead>
               
-              <TableHead className="text-right">Actions</TableHead>
+              <PolicyTableHead>Next Renewal</PolicyTableHead>
+              
+              <PolicyTableHead>Commission Maturity</PolicyTableHead>
+              
+              <PolicyTableHead 
+                column="status"
+                sortBy={sortBy}
+                sortDirection={sortDirection as "asc" | "desc"}
+                onSort={handleSort}
+              >
+                Status
+              </PolicyTableHead>
+              
+              <PolicyTableHead className="text-right">Actions</PolicyTableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {currentPolicies.length > 0 ? (
-              currentPolicies.map((policy) => {
-                const totalExpectedCommission = calculateTotalExpectedCommission(policy);
-                const premiumToValueRatio = calculatePremiumToValueRatio(policy);
-                const policyAge = calculatePolicyAge(policy);
-                const commissionMaturityDate = calculateCommissionMaturityDate(policy);
-                const nextRenewalDate = calculateNextRenewalDate(policy);
-                
-                return (
-                  <TableRow key={policy.id}>
-                    <TableCell className="font-medium sticky left-0 bg-background z-10">
-                      {policy.policy_name}
-                    </TableCell>
-                    <TableCell className="sticky left-[150px] bg-background z-10">{policy.policy_type}</TableCell>
-                    <TableCell>{policy.provider || "N/A"}</TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(policy.premium)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(policy.value)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(policy.first_year_commission)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(policy.annual_ongoing_commission)}
-                    </TableCell>
-                    <TableCell className="text-right font-semibold">
-                      {formatCurrency(totalExpectedCommission)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {premiumToValueRatio !== null ? formatPercentage(premiumToValueRatio) : "—"}
-                    </TableCell>
-                    <TableCell>
-                      {getPaymentStructureLabel(policy.payment_structure_type)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {policyAge !== null ? `${policyAge} years` : "—"}
-                    </TableCell>
-                    <TableCell>
-                      {policy.start_date 
-                        ? format(new Date(policy.start_date), "MMM d, yyyy")
-                        : "N/A"}
-                    </TableCell>
-                    <TableCell>
-                      {formatReadableDate(nextRenewalDate)}
-                    </TableCell>
-                    <TableCell>
-                      {formatReadableDate(commissionMaturityDate)}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(policy.status)}</TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <ChevronDown className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem asChild>
-                            <Link to={`/clients/${policy.client_id}`} className="flex items-center">
-                              <ExternalLink className="mr-2 h-4 w-4" />
-                              View Client
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setPolicyToDelete(policy);
-                              setDeleteDialogOpen(true);
-                            }}
-                            className="text-destructive"
-                          >
-                            <Trash className="mr-2 h-4 w-4" />
-                            Delete Policy
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
+              currentPolicies.map((policy) => (
+                <PolicyTableRow key={policy.id} policy={policy} />
+              ))
             ) : (
               <TableRow>
-                <TableCell colSpan={16} className="h-24 text-center">
+                <td colSpan={16} className="h-24 text-center p-4">
                   No policies found.
-                </TableCell>
+                </td>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
       
-      {totalPages > 1 && (
-        <Pagination className="mt-4">
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious 
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-                aria-disabled={currentPage === 1}
-              />
-            </PaginationItem>
-            
-            {Array.from({ length: totalPages }, (_, i) => i + 1)
-              .filter(page => {
-                return (
-                  page === 1 || 
-                  page === totalPages || 
-                  (page >= currentPage - 1 && page <= currentPage + 1)
-                );
-              })
-              .map((page, index, array) => {
-                const showEllipsisBefore = index > 0 && array[index - 1] !== page - 1;
-                const showEllipsisAfter = index < array.length - 1 && array[index + 1] !== page + 1;
-                
-                return (
-                  <React.Fragment key={page}>
-                    {showEllipsisBefore && (
-                      <PaginationItem>
-                        <span className="flex h-9 w-9 items-center justify-center">...</span>
-                      </PaginationItem>
-                    )}
-                    
-                    <PaginationItem>
-                      <PaginationLink
-                        onClick={() => setCurrentPage(page)}
-                        isActive={page === currentPage}
-                      >
-                        {page}
-                      </PaginationLink>
-                    </PaginationItem>
-                    
-                    {showEllipsisAfter && (
-                      <PaginationItem>
-                        <span className="flex h-9 w-9 items-center justify-center">...</span>
-                      </PaginationItem>
-                    )}
-                  </React.Fragment>
-                );
-              })}
-            
-            <PaginationItem>
-              <PaginationNext 
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-                aria-disabled={currentPage === totalPages}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
-      )}
-      
-      {policyToDelete && (
-        <DeletePolicyDialog
-          policy={policyToDelete}
-          open={deleteDialogOpen}
-          onOpenChange={setDeleteDialogOpen}
-        />
-      )}
+      <PaginationControls 
+        currentPage={currentPage}
+        totalPages={totalPages}
+        setCurrentPage={setCurrentPage}
+      />
     </div>
   );
 }
