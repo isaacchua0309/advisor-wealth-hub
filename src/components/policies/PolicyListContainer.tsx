@@ -55,7 +55,7 @@ export default function PolicyListContainer({
           
           <TabsContent value="compact" className="w-full">
             <ScrollArea className="w-full">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 min-w-[320px]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 min-w-[320px]">
                 {filteredPolicies.map((policy) => (
                   <div 
                     key={policy.id} 

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Outlet, Link } from "react-router-dom";
 
@@ -76,7 +77,6 @@ export default function DashboardLayout() {
           <Nav links={mainNavItems} />
         </SidebarContent>
         <SidebarFooter>
-          {/* User Button Here */}
           <UserButton />
           <ThemeToggle />
         </SidebarFooter>
@@ -84,10 +84,11 @@ export default function DashboardLayout() {
       <div className="flex-1 overflow-auto">
         <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-6">
           <SidebarTrigger />
-          {/* Mobile Breadcrumb */}
         </header>
         <main className="grid flex-1 items-start gap-4 p-6 md:gap-8">
-          <Outlet />
+          <div className="w-full max-w-[1600px] mx-auto">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

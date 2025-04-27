@@ -13,6 +13,12 @@ interface CommissionProjectionChartProps {
   selectedYear?: number | null;
 }
 
+interface ChartDataItem {
+  year: string;
+  commission: number;
+  isSelected: boolean;
+}
+
 export default function CommissionProjectionChart({ 
   policies, 
   years = 10, 
@@ -78,7 +84,7 @@ export default function CommissionProjectionChart({
   const dynamicMaxBarSize = Math.min(60, 300 / commissionData.length);
   
   return (
-    <Card className="mb-6">
+    <Card className="mb-6 w-full">
       <CardHeader className="pb-2">
         <CardTitle className="text-xl">Commission Projection</CardTitle>
         <CardDescription className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4 sm:items-center">
@@ -93,8 +99,8 @@ export default function CommissionProjectionChart({
         </CardDescription>
       </CardHeader>
       <CardContent className="p-0 sm:p-4">
-        <div className="w-full overflow-x-auto overflow-y-hidden">
-          <div className="min-w-[500px]">
+        <div className="w-full overflow-hidden">
+          <div className="min-w-[500px] chart-container">
             <ChartContainer config={chartConfig}>
               <ResponsiveContainer width="100%" aspect={2.5}>
                 <BarChart 
@@ -115,7 +121,6 @@ export default function CommissionProjectionChart({
                     tickLine={false}
                     tickFormatter={tooltipFormatter}
                     domain={[0, 'auto']}
-                    nice
                     tick={{ fontSize: 10 }}
                     width={60}
                   />
@@ -129,10 +134,11 @@ export default function CommissionProjectionChart({
                     radius={[4, 4, 0, 0]}
                     maxBarSize={dynamicMaxBarSize}
                     cursor={onYearSelect ? "pointer" : undefined}
+                    fill="#10b981"
                     style={{
                       cursor: onYearSelect ? "pointer" : "default",
+                      fill: "var(--color-commission)",
                     }}
-                    fill={(entry) => entry.isSelected ? "#047857" : "var(--color-commission)"}
                   />
                 </BarChart>
               </ResponsiveContainer>

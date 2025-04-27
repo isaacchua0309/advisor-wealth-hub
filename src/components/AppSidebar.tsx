@@ -1,7 +1,7 @@
 
 import { NavLink } from "react-router-dom";
 import { Home, Users, FileText, PieChart, Calendar, Settings } from "lucide-react";
-import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader } from "@/components/ui/sidebar";
 
 const navigation = [
   {
@@ -39,9 +39,9 @@ const navigation = [
 export function AppSidebar() {
   return (
     <Sidebar>
-      <div className="p-4 flex items-center justify-center border-b border-sidebar-border">
-        <span className="text-xl font-bold text-white">AdvisorHub</span>
-      </div>
+      <SidebarHeader className="flex items-center justify-center border-b border-sidebar-border p-4">
+        <span className="text-xl font-bold text-white">InsureTrack</span>
+      </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>

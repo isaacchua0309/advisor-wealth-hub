@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -33,6 +34,12 @@
     --ring: 222.2 84% 4.9%;
 
     --radius: 0.5rem;
+    
+    --sidebar-background: 222.2 84% 4.9%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-accent: 217.2 32.6% 17.5%;
+    --sidebar-accent-foreground: 210 40% 98%;
   }
 
   .dark {
@@ -112,7 +119,7 @@
   
   /* Policy page layout classes */
   .policy-page-grid {
-    @apply grid grid-cols-1 gap-4;
+    @apply grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3;
   }
   
   .policy-dashboard-section {
@@ -132,7 +139,7 @@
     @apply overflow-x-auto relative border-0;
     scrollbar-width: thin;
     scrollbar-color: #ccc transparent;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
   }
   
   .chart-container::-webkit-scrollbar {
@@ -155,11 +162,31 @@
   
   /* Add spacing between page sections */
   .page-section {
-    @apply mb-8;
+    @apply mb-6 md:mb-8;
   }
   
   /* Ensure consistent spacing between major components */
   .section-spacing {
-    @apply my-8;
+    @apply my-6 md:my-8;
+  }
+  
+  /* Content container class */
+  .content-container {
+    @apply w-full max-w-[1600px] mx-auto;
+  }
+  
+  /* Responsive card grid */
+  .responsive-card-grid {
+    @apply grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+  }
+  
+  /* Responsive card grid for smaller cards */
+  .responsive-small-card-grid {
+    @apply grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6;
+  }
+  
+  /* Dashboard card layout */
+  .dashboard-card {
+    @apply p-4 md:p-6 bg-card rounded-lg border shadow-sm h-full;
   }
 }

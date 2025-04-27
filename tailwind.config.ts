@@ -56,12 +56,12 @@ export default {
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
-					primary: 'hsl(var(--sidebar-primary))',
-					'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
+					primary: 'hsl(var(--sidebar-primary, var(--primary)))',
+					'primary-foreground': 'hsl(var(--sidebar-primary-foreground, var(--primary-foreground)))',
 					accent: 'hsl(var(--sidebar-accent))',
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
-					ring: 'hsl(var(--sidebar-ring))'
+					ring: 'hsl(var(--sidebar-ring, var(--ring)))'
 				},
 				// Custom CRM colors
 				crm: {
@@ -79,6 +79,13 @@ export default {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
+			},
+			maxWidth: {
+				'8xl': '90rem', // 1440px
+				'9xl': '100rem', // 1600px
+			},
+			screens: {
+				'3xl': '1920px',
 			},
 			keyframes: {
 				'accordion-down': {
