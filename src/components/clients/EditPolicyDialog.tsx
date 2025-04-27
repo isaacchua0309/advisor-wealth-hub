@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   Dialog,
@@ -213,17 +214,17 @@ export const EditPolicyDialog = ({ policy, open, onOpenChange }) => {
                 control={control}
                 render={({ field }) => (
                   <Select
-                    value={field.value || ""}
+                    value={field.value || "none"}
                     onValueChange={(value) => {
-                      field.onChange(value);
-                      handleGlobalPolicyChange(value);
+                      field.onChange(value === "none" ? null : value);
+                      handleGlobalPolicyChange(value === "none" ? "" : value);
                     }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select a global policy template" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None (Custom Policy)</SelectItem>
+                      <SelectItem value="none">None (Custom Policy)</SelectItem>
                       {globalPolicies?.map((gp) => (
                         <SelectItem key={gp.id} value={gp.id}>
                           {gp.policy_name} ({gp.provider || "No Provider"})
@@ -465,61 +466,6 @@ export const EditPolicyDialog = ({ policy, open, onOpenChange }) => {
                     )}
                   />
                 </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="ongoing_commission_rate">Ongoing Commission Rate (%)</Label>
-                  <Controller
-                    name="ongoing_commission_rate"
-                    control={control}
-                    render={({ field }) => (
-                      <Input
-                        id="ongoing_commission_rate"
-                        type="number"
-                        placeholder="Ongoing rate"
-                        {...field}
-                        value={field.value === null ? "" : field.value}
-                        onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
-                      />
-                    )}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="commission_duration">Commission Duration (Years)</Label>
-                  <Controller
-                    name="commission_duration"
-                    control={control}
-                    render={({ field }) => (
-                      <Input
-                        id="commission_duration"
-                        type="number"
-                        placeholder="Duration"
-                        {...field}
-                        value={field.value === null ? "" : field.value}
-                        onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
-                      />
-                    )}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="policy_duration">Policy Duration (Years)</Label>
-                  <Controller
-                    name="policy_duration"
-                    control={control}
-                    render={({ field }) => (
-                      <Input
-                        id="policy_duration"
-                        type="number"
-                        placeholder="Duration"
-                        {...field}
-                        value={field.value === null ? "" : field.value}
-                        onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
-                      />
-                    )}
-                  />
-                </div>
-                
                 <div className="space-y-2">
                   <Label htmlFor="first_year_commission">First Year Commission ($)</Label>
                   <Controller
@@ -529,17 +475,32 @@ export const EditPolicyDialog = ({ policy, open, onOpenChange }) => {
                       <Input
                         id="first_year_commission"
                         type="number"
-                        placeholder="Auto-calculated"
+                        placeholder="First year commission"
+                        readOnly
                         {...field}
                         value={field.value === null ? "" : field.value}
-                        onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
-                        readOnly
                         className="bg-muted"
                       />
                     )}
                   />
                 </div>
-                
+                <div className="space-y-2">
+                  <Label htmlFor="ongoing_commission_rate">Ongoing Commission Rate (%)</Label>
+                  <Controller
+                    name="ongoing_commission_rate"
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        id="ongoing_commission_rate"
+                        type="number"
+                        placeholder="Ongoing commission rate"
+                        {...field}
+                        value={field.value === null ? "" : field.value}
+                        onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
+                      />
+                    )}
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="annual_ongoing_commission">Annual Ongoing Commission ($)</Label>
                   <Controller
@@ -549,12 +510,45 @@ export const EditPolicyDialog = ({ policy, open, onOpenChange }) => {
                       <Input
                         id="annual_ongoing_commission"
                         type="number"
-                        placeholder="Auto-calculated"
+                        placeholder="Annual ongoing commission"
+                        readOnly
+                        {...field}
+                        value={field.value === null ? "" : field.value}
+                        className="bg-muted"
+                      />
+                    )}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="commission_duration">Commission Duration (Years)</Label>
+                  <Controller
+                    name="commission_duration"
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        id="commission_duration"
+                        type="number"
+                        placeholder="Commission duration"
                         {...field}
                         value={field.value === null ? "" : field.value}
                         onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
-                        readOnly
-                        className="bg-muted"
+                      />
+                    )}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="policy_duration">Policy Duration (Years)</Label>
+                  <Controller
+                    name="policy_duration"
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        id="policy_duration"
+                        type="number"
+                        placeholder="Policy duration"
+                        {...field}
+                        value={field.value === null ? "" : field.value}
+                        onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
                       />
                     )}
                   />
@@ -562,26 +556,28 @@ export const EditPolicyDialog = ({ policy, open, onOpenChange }) => {
               </div>
             </div>
           </div>
-          
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+
+          <DialogFooter className="mt-6">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="mr-2"
+            >
               Cancel
             </Button>
-            <Button type="submit">Save changes</Button>
             <Button
               type="button"
               variant="destructive"
               onClick={handleDelete}
-              className="ml-auto"
+              className="mr-2"
             >
               Delete
             </Button>
+            <Button type="submit">Save Changes</Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
   );
 };
-
-// Add default export while keeping the named export
-export default EditPolicyDialog;

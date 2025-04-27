@@ -49,7 +49,7 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [calculatedOngoingCommission, setCalculatedOngoingCommission] = useState<number | null>(null);
   // New state to track selected global policy
-  const [selectedGlobalPolicy, setSelectedGlobalPolicy] = useState<string>("");
+  const [selectedGlobalPolicy, setSelectedGlobalPolicy] = useState<string>("none");
 
   const form = useForm<CreatePolicyInput>({
     defaultValues: {
@@ -78,7 +78,7 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
 
   // Effect to handle global policy selection
   useEffect(() => {
-    if (selectedGlobalPolicy && globalPolicies) {
+    if (selectedGlobalPolicy && selectedGlobalPolicy !== "none" && globalPolicies) {
       const globalPolicy = globalPolicies.find(policy => policy.id === selectedGlobalPolicy);
       if (globalPolicy) {
         // Auto-fill fields from the selected global policy
@@ -147,7 +147,7 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
       await addPolicy.mutateAsync({ clientId, policy: data });
       onOpenChange(false);
       form.reset();
-      setSelectedGlobalPolicy("");
+      setSelectedGlobalPolicy("none");
     } catch (error) {
       console.error("Error adding policy:", error);
     } finally {
@@ -157,7 +157,7 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
 
   // Function to handle clearing the global policy selection
   const clearGlobalPolicy = () => {
-    setSelectedGlobalPolicy("");
+    setSelectedGlobalPolicy("none");
     form.setValue('global_policy_id', undefined);
     // Reset fields that were auto-filled
     form.setValue('policy_name', "");
@@ -203,7 +203,7 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
                     <SelectValue placeholder="Select a global policy template" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None (Create custom policy)</SelectItem>
+                    <SelectItem value="none">None (Create custom policy)</SelectItem>
                     {globalPolicies?.map((policy) => (
                       <SelectItem key={policy.id} value={policy.id}>
                         {policy.policy_name} ({policy.provider || "No Provider"})
@@ -211,7 +211,7 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
                     ))}
                   </SelectContent>
                 </Select>
-                {selectedGlobalPolicy && (
+                {selectedGlobalPolicy !== "none" && (
                   <div className="flex justify-end">
                     <Button 
                       type="button" 
@@ -223,7 +223,7 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
                     </Button>
                   </div>
                 )}
-                {selectedGlobalPolicy && (
+                {selectedGlobalPolicy !== "none" && (
                   <FormDescription className="text-xs">
                     Fields auto-filled from global policy have a light gray background
                   </FormDescription>
@@ -241,7 +241,7 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
                         <Input 
                           placeholder="Policy Name" 
                           {...field} 
-                          className={selectedGlobalPolicy ? "bg-muted" : ""}
+                          className={selectedGlobalPolicy !== "none" ? "bg-muted" : ""}
                         />
                       </FormControl>
                       <FormMessage />
@@ -260,7 +260,7 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
                         value={field.value}
                       >
                         <FormControl>
-                          <SelectTrigger className={selectedGlobalPolicy ? "bg-muted" : ""}>
+                          <SelectTrigger className={selectedGlobalPolicy !== "none" ? "bg-muted" : ""}>
                             <SelectValue placeholder="Select type" />
                           </SelectTrigger>
                         </FormControl>
@@ -291,7 +291,7 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
                           placeholder="Insurance provider" 
                           {...field} 
                           value={field.value || ""} 
-                          className={selectedGlobalPolicy ? "bg-muted" : ""}
+                          className={selectedGlobalPolicy !== "none" ? "bg-muted" : ""}
                         />
                       </FormControl>
                       <FormMessage />
@@ -440,7 +440,7 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
                         value={field.value}
                       >
                         <FormControl>
-                          <SelectTrigger className={selectedGlobalPolicy ? "bg-muted" : ""}>
+                          <SelectTrigger className={selectedGlobalPolicy !== "none" ? "bg-muted" : ""}>
                             <SelectValue placeholder="Select payment structure" />
                           </SelectTrigger>
                         </FormControl>
@@ -483,7 +483,7 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
                           onChange={(e) => onChange(e.target.value ? parseInt(e.target.value) : undefined)}
                           {...restField}
                           value={restField.value === undefined ? "" : restField.value}
-                          className={selectedGlobalPolicy ? "bg-muted" : ""}
+                          className={selectedGlobalPolicy !== "none" ? "bg-muted" : ""}
                         />
                       </FormControl>
                       <FormMessage />
@@ -516,7 +516,7 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
                           onChange={(e) => onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
                           {...restField}
                           value={restField.value === undefined ? "" : restField.value}
-                          className={selectedGlobalPolicy ? "bg-muted" : ""}
+                          className={selectedGlobalPolicy !== "none" ? "bg-muted" : ""}
                         />
                       </FormControl>
                       <FormMessage />
@@ -632,7 +632,7 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
                           onChange={(e) => onChange(e.target.value ? parseInt(e.target.value) : undefined)}
                           {...restField}
                           value={restField.value === undefined ? "" : restField.value}
-                          className={selectedGlobalPolicy ? "bg-muted" : ""}
+                          className={selectedGlobalPolicy !== "none" ? "bg-muted" : ""}
                         />
                       </FormControl>
                       <FormMessage />
@@ -665,7 +665,7 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
                           onChange={(e) => onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
                           {...restField}
                           value={restField.value === undefined ? "" : restField.value}
-                          className={selectedGlobalPolicy ? "bg-muted" : ""}
+                          className={selectedGlobalPolicy !== "none" ? "bg-muted" : ""}
                         />
                       </FormControl>
                       <FormMessage />
