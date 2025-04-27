@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useClients } from "@/hooks/useClients";
 import { Policy } from "@/types/policy";
@@ -50,7 +49,6 @@ export default function Policies() {
   const [maxPremium, setMaxPremium] = useState(1000000);
   const [maxFirstYearCommission, setMaxFirstYearCommission] = useState(100000);
 
-  // Update max ranges based on actual policy data
   useEffect(() => {
     if (policies) {
       const maxPrem = Math.max(...policies.map(p => p.premium || 0), 1000);
@@ -67,7 +65,6 @@ export default function Policies() {
     }
   }, [policies]);
 
-  // Filter policies based on user selection
   useEffect(() => {
     if (!policies) {
       setFilteredPolicies([]);
@@ -129,7 +126,6 @@ export default function Policies() {
     setFilteredPolicies(filtered);
   }, [policies, filters, selectedYear]);
 
-  // Helper functions for filtering
   const isRenewingThisYear = (policy: Policy): boolean => {
     if (!policy.start_date) return false;
     
@@ -167,7 +163,6 @@ export default function Policies() {
     return year >= startYear;
   };
   
-  // Sort policies based on selected column and direction
   const sortPolicies = (policies: Policy[], sortBy: string, sortDirection: "asc" | "desc"): Policy[] => {
     return [...policies].sort((a, b) => {
       let valueA: any;
@@ -301,7 +296,7 @@ export default function Policies() {
         />
       </Card>
       
-      <div className="w-full max-w-full mb-10">
+      <div className="w-full max-w-full mb-10 overflow-hidden">
         <PolicyListContainer 
           isLoadingPolicies={isLoadingPolicies}
           policies={policies}
