@@ -51,7 +51,6 @@ import {
   formatReadableDate
 } from "./PolicyUtils";
 
-// Define a type for the column to be sorted
 type SortColumn = 
   | "policy_name" 
   | "policy_type" 
@@ -79,28 +78,23 @@ export default function PoliciesTable({
   sortDirection = "asc",
   onSort
 }: PoliciesTableProps) {
-  // State for pagination
   const [currentPage, setCurrentPage] = useState(1);
   const policiesPerPage = 10;
   
-  // State for delete dialog
   const [policyToDelete, setPolicyToDelete] = useState<Policy | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  // Handle sorting
   const handleSort = (column: SortColumn) => {
     if (onSort) {
       onSort(column);
     }
   };
   
-  // Get paginated policies
   const indexOfLastPolicy = currentPage * policiesPerPage;
   const indexOfFirstPolicy = indexOfLastPolicy - policiesPerPage;
   const currentPolicies = policies.slice(indexOfFirstPolicy, indexOfLastPolicy);
   const totalPages = Math.ceil(policies.length / policiesPerPage);
   
-  // Get payment structure label
   const getPaymentStructureLabel = (type: Policy["payment_structure_type"]) => {
     const structures = {
       single_premium: "Single Premium",
@@ -114,7 +108,6 @@ export default function PoliciesTable({
     return structures[type] || type;
   };
   
-  // Get status badge color
   const getStatusBadge = (status: string | null) => {
     if (!status) return <Badge variant="outline">Unknown</Badge>;
     
@@ -135,7 +128,6 @@ export default function PoliciesTable({
     );
   };
   
-  // Sort indicator component
   const SortIndicator = ({ column }: { column: string }) => {
     if (sortBy !== column) return null;
     
@@ -148,13 +140,13 @@ export default function PoliciesTable({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead 
                 onClick={() => handleSort("policy_name")}
-                className="cursor-pointer hover:bg-muted/50"
+                className="cursor-pointer hover:bg-muted/50 sticky left-0 bg-background"
               >
                 <div className="flex items-center">
                   Policy Name
@@ -284,7 +276,9 @@ export default function PoliciesTable({
                 
                 return (
                   <TableRow key={policy.id}>
-                    <TableCell>{policy.policy_name}</TableCell>
+                    <TableCell className="font-medium sticky left-0 bg-background">
+                      {policy.policy_name}
+                    </TableCell>
                     <TableCell>{policy.policy_type}</TableCell>
                     <TableCell>{policy.provider || "N/A"}</TableCell>
                     <TableCell className="text-right">
@@ -303,7 +297,7 @@ export default function PoliciesTable({
                       {formatCurrency(totalExpectedCommission)}
                     </TableCell>
                     <TableCell className="text-right">
-                      {premiumToValueRatio !== null ? formatPercentage(premiumToValueRatio.toFixed(2)) : "—"}
+                      {premiumToValueRatio !== null ? formatPercentage(premiumToValueRatio) : "—"}
                     </TableCell>
                     <TableCell>
                       {getPaymentStructureLabel(policy.payment_structure_type)}
@@ -326,7 +320,7 @@ export default function PoliciesTable({
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
                             <span className="sr-only">Open menu</span>
                             <ChevronDown className="h-4 w-4" />
                           </Button>
@@ -365,7 +359,6 @@ export default function PoliciesTable({
         </Table>
       </div>
       
-      {/* Pagination */}
       {totalPages > 1 && (
         <Pagination className="mt-4">
           <PaginationContent>
@@ -379,7 +372,6 @@ export default function PoliciesTable({
             
             {Array.from({ length: totalPages }, (_, i) => i + 1)
               .filter(page => {
-                // Show first, last, and pages around current page
                 return (
                   page === 1 || 
                   page === totalPages || 
@@ -387,12 +379,11 @@ export default function PoliciesTable({
                 );
               })
               .map((page, index, array) => {
-                // Add ellipsis where needed
                 const showEllipsisBefore = index > 0 && array[index - 1] !== page - 1;
                 const showEllipsisAfter = index < array.length - 1 && array[index + 1] !== page + 1;
                 
                 return (
-                  <span key={page}>
+                  <React.Fragment key={page}>
                     {showEllipsisBefore && (
                       <PaginationItem>
                         <span className="flex h-9 w-9 items-center justify-center">...</span>
@@ -413,7 +404,7 @@ export default function PoliciesTable({
                         <span className="flex h-9 w-9 items-center justify-center">...</span>
                       </PaginationItem>
                     )}
-                  </span>
+                  </React.Fragment>
                 );
               })}
             
@@ -428,7 +419,6 @@ export default function PoliciesTable({
         </Pagination>
       )}
       
-      {/* Delete Policy Dialog */}
       {policyToDelete && (
         <DeletePolicyDialog
           policy={policyToDelete}

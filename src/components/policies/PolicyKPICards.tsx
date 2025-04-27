@@ -38,7 +38,7 @@ export default function PolicyKPICards({ policies }: PolicyKPICardsProps) {
   const nextYearCommission = commissionProjection.length > 1 ? commissionProjection[1].amount : 0;
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6 mb-6">
+    <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6 mb-8">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Active Policies</CardTitle>
