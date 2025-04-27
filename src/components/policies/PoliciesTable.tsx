@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Policy } from "@/types/policy";
 import { 
@@ -146,22 +146,24 @@ export default function PoliciesTable({
             <TableRow>
               <TableHead 
                 onClick={() => handleSort("policy_name")}
-                className="cursor-pointer hover:bg-muted/50 sticky left-0 bg-background"
+                className="cursor-pointer hover:bg-muted/50 sticky left-0 bg-background z-10"
               >
                 <div className="flex items-center">
                   Policy Name
                   <SortIndicator column="policy_name" />
                 </div>
               </TableHead>
+              
               <TableHead 
                 onClick={() => handleSort("policy_type")}
-                className="cursor-pointer hover:bg-muted/50"
+                className="cursor-pointer hover:bg-muted/50 sticky left-[150px] bg-background z-10"
               >
                 <div className="flex items-center">
                   Policy Type
                   <SortIndicator column="policy_type" />
                 </div>
               </TableHead>
+              
               <TableHead 
                 onClick={() => handleSort("provider")}
                 className="cursor-pointer hover:bg-muted/50"
@@ -171,6 +173,7 @@ export default function PoliciesTable({
                   <SortIndicator column="provider" />
                 </div>
               </TableHead>
+              
               <TableHead 
                 onClick={() => handleSort("premium")}
                 className="cursor-pointer hover:bg-muted/50 text-right"
@@ -180,6 +183,7 @@ export default function PoliciesTable({
                   <SortIndicator column="premium" />
                 </div>
               </TableHead>
+              
               <TableHead 
                 onClick={() => handleSort("value")}
                 className="cursor-pointer hover:bg-muted/50 text-right"
@@ -189,6 +193,7 @@ export default function PoliciesTable({
                   <SortIndicator column="value" />
                 </div>
               </TableHead>
+              
               <TableHead 
                 onClick={() => handleSort("first_year_commission")}
                 className="cursor-pointer hover:bg-muted/50 text-right"
@@ -198,6 +203,7 @@ export default function PoliciesTable({
                   <SortIndicator column="first_year_commission" />
                 </div>
               </TableHead>
+              
               <TableHead 
                 onClick={() => handleSort("annual_ongoing_commission")}
                 className="cursor-pointer hover:bg-muted/50 text-right"
@@ -207,6 +213,7 @@ export default function PoliciesTable({
                   <SortIndicator column="annual_ongoing_commission" />
                 </div>
               </TableHead>
+              
               <TableHead 
                 onClick={() => handleSort("total_expected_commission")}
                 className="cursor-pointer hover:bg-muted/50 text-right"
@@ -216,6 +223,7 @@ export default function PoliciesTable({
                   <SortIndicator column="total_expected_commission" />
                 </div>
               </TableHead>
+              
               <TableHead className="text-right">
                 <TooltipProvider>
                   <Tooltip>
@@ -232,7 +240,9 @@ export default function PoliciesTable({
                   </Tooltip>
                 </TooltipProvider>
               </TableHead>
+              
               <TableHead className="text-right">Payment Structure</TableHead>
+              
               <TableHead 
                 onClick={() => handleSort("policy_age")}
                 className="cursor-pointer hover:bg-muted/50 text-right"
@@ -242,6 +252,7 @@ export default function PoliciesTable({
                   <SortIndicator column="policy_age" />
                 </div>
               </TableHead>
+              
               <TableHead 
                 onClick={() => handleSort("start_date")}
                 className="cursor-pointer hover:bg-muted/50"
@@ -251,8 +262,11 @@ export default function PoliciesTable({
                   <SortIndicator column="start_date" />
                 </div>
               </TableHead>
+              
               <TableHead>Next Renewal</TableHead>
+              
               <TableHead>Commission Maturity</TableHead>
+              
               <TableHead 
                 onClick={() => handleSort("status")}
                 className="cursor-pointer hover:bg-muted/50"
@@ -262,6 +276,7 @@ export default function PoliciesTable({
                   <SortIndicator column="status" />
                 </div>
               </TableHead>
+              
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -276,10 +291,10 @@ export default function PoliciesTable({
                 
                 return (
                   <TableRow key={policy.id}>
-                    <TableCell className="font-medium sticky left-0 bg-background">
+                    <TableCell className="font-medium sticky left-0 bg-background z-10">
                       {policy.policy_name}
                     </TableCell>
-                    <TableCell>{policy.policy_type}</TableCell>
+                    <TableCell className="sticky left-[150px] bg-background z-10">{policy.policy_type}</TableCell>
                     <TableCell>{policy.provider || "N/A"}</TableCell>
                     <TableCell className="text-right">
                       {formatCurrency(policy.premium)}

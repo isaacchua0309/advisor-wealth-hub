@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useClients } from "@/hooks/useClients";
 import { Policy } from "@/types/policy";
@@ -10,7 +9,6 @@ import PolicyKPICards from "@/components/policies/PolicyKPICards";
 import CommissionProjectionChart from "@/components/policies/CommissionProjectionChart";
 import { calculateTotalExpectedCommission } from "@/components/policies/PolicyUtils";
 
-// Define filter state type
 export type PolicyFilters = {
   search: string;
   policyType: string;
@@ -27,16 +25,12 @@ export type PolicyFilters = {
 };
 
 export default function Policies() {
-  // Get policies data
   const { policies, isLoadingPolicies } = useClients();
   
-  // State for filtered policies
   const [filteredPolicies, setFilteredPolicies] = useState<Policy[]>([]);
   
-  // State for year selection (for highlighting in the projection chart)
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   
-  // Initialize filter state with non-empty default values
   const [filters, setFilters] = useState<PolicyFilters>({
     search: "",
     policyType: "all",
@@ -52,11 +46,9 @@ export default function Policies() {
     sortDirection: "asc"
   });
 
-  // Initial filter ranges based on data
   const [maxPremium, setMaxPremium] = useState(1000000);
   const [maxFirstYearCommission, setMaxFirstYearCommission] = useState(100000);
 
-  // Calculate max values for sliders when data loads
   useEffect(() => {
     if (policies) {
       const maxPrem = Math.max(...policies.map(p => p.premium || 0), 1000);
@@ -73,57 +65,45 @@ export default function Policies() {
     }
   }, [policies]);
 
-  // Filter and sort policies based on current filters
   useEffect(() => {
     if (!policies) {
       setFilteredPolicies([]);
       return;
     }
 
-    // Make TypeScript happy by explicitly casting policies to Policy[]
     const typedPolicies = policies as Policy[];
 
     let filtered = typedPolicies.filter(policy => {
-      // Search by policy name (case insensitive)
       const searchMatch = !filters.search || 
         policy.policy_name.toLowerCase().includes(filters.search.toLowerCase());
       
-      // Filter by policy type
       const typeMatch = filters.policyType === "all" || 
         policy.policy_type === filters.policyType;
       
-      // Filter by payment structure
       const paymentStructureMatch = filters.paymentStructure === "all" || 
         policy.payment_structure_type === filters.paymentStructure;
       
-      // Filter by status
       const statusMatch = filters.status === "all" || 
         policy.status === filters.status;
       
-      // Filter by policy duration
       const durationMatch = !policy.policy_duration || 
         (policy.policy_duration >= filters.policyDuration[0] && 
          policy.policy_duration <= filters.policyDuration[1]);
       
-      // Filter by premium range
       const premiumMatch = !policy.premium || 
         (policy.premium >= filters.premiumRange[0] && 
          policy.premium <= filters.premiumRange[1]);
       
-      // Filter by commission rate
       const commissionMatch = !policy.commission_rate || 
         (policy.commission_rate >= filters.commissionRange[0] && 
          policy.commission_rate <= filters.commissionRange[1]);
       
-      // Filter by first year commission
       const firstYearCommissionMatch = !policy.first_year_commission || 
         (policy.first_year_commission >= filters.firstYearCommissionRange[0] && 
          policy.first_year_commission <= filters.firstYearCommissionRange[1]);
       
-      // Filter for policies renewing this year
       const renewingThisYearMatch = !filters.showRenewingThisYear || isRenewingThisYear(policy);
       
-      // If a specific year is selected, filter by policies active that year
       const yearMatch = selectedYear === null || isPolicyActiveInYear(policy, selectedYear);
       
       return searchMatch && typeMatch && paymentStructureMatch && statusMatch && 
@@ -131,10 +111,8 @@ export default function Policies() {
         renewingThisYearMatch && yearMatch;
     });
     
-    // Sort policies based on selected sort option
     filtered = sortPolicies(filtered, filters.sortBy, filters.sortDirection);
     
-    // Apply top 10 by commission filter if selected
     if (filters.showTopByCommission) {
       filtered = filtered
         .sort((a, b) => {
@@ -148,7 +126,6 @@ export default function Policies() {
     setFilteredPolicies(filtered);
   }, [policies, filters, selectedYear]);
 
-  // Check if a policy is renewing this year
   const isRenewingThisYear = (policy: Policy): boolean => {
     if (!policy.start_date) return false;
     
@@ -156,44 +133,36 @@ export default function Policies() {
     const currentDate = new Date();
     const currentYear = currentDate.getFullYear();
     
-    // Create the next renewal date for this year
     const renewalDate = new Date(startDate);
     renewalDate.setFullYear(currentYear);
     
-    // If the renewal date has passed, check next year's renewal
     if (renewalDate < currentDate) {
       renewalDate.setFullYear(currentYear + 1);
     }
     
-    // Check if renewal is within this calendar year
     return renewalDate.getFullYear() === currentYear;
   };
   
-  // Check if a policy is active in a given year
   const isPolicyActiveInYear = (policy: Policy, year: number): boolean => {
     if (!policy.start_date) return false;
     
     const startDate = new Date(policy.start_date);
     const startYear = startDate.getFullYear();
     
-    // If the policy has an end date, check if the year is within the range
     if (policy.end_date) {
       const endDate = new Date(policy.end_date);
       const endYear = endDate.getFullYear();
       return year >= startYear && year <= endYear;
     }
     
-    // If the policy has a commission duration, calculate end year
     if (policy.commission_duration) {
       const endYear = startYear + policy.commission_duration;
       return year >= startYear && year <= endYear;
     }
     
-    // Default: assume policy is active if it has started
     return year >= startYear;
   };
   
-  // Sort policies based on selected criteria
   const sortPolicies = (policies: Policy[], sortBy: string, sortDirection: "asc" | "desc"): Policy[] => {
     return [...policies].sort((a, b) => {
       let valueA: any;
@@ -267,14 +236,13 @@ export default function Policies() {
     });
     setSelectedYear(null);
   };
-  
-  // Handle year selection from the chart
+
   const handleYearSelect = (year: number) => {
     setSelectedYear(year === selectedYear ? null : year);
   };
 
   return (
-    <div>
+    <div className="w-full max-w-full overflow-x-hidden">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Policies</h2>
@@ -284,20 +252,24 @@ export default function Policies() {
         </div>
       </div>
       
-      {/* KPI Cards Section */}
-      {!isLoadingPolicies && policies && (
-        <PolicyKPICards policies={filteredPolicies} />
-      )}
+      <div className="mb-8">
+        {!isLoadingPolicies && policies && (
+          <PolicyKPICards policies={filteredPolicies} />
+        )}
+      </div>
       
-      {/* Commission Projection Chart */}
-      {!isLoadingPolicies && policies && (
-        <CommissionProjectionChart 
-          policies={filteredPolicies}
-          years={10} 
-        />
-      )}
+      <div className="mb-8">
+        {!isLoadingPolicies && policies && (
+          <CommissionProjectionChart 
+            policies={filteredPolicies}
+            years={10}
+            onYearSelect={handleYearSelect}
+            selectedYear={selectedYear}
+          />
+        )}
+      </div>
       
-      <Card className="mb-6 p-4 mt-6">
+      <Card className="mb-8 p-4">
         <PolicyFilters 
           filters={filters} 
           setFilters={setFilters}
@@ -319,35 +291,39 @@ export default function Policies() {
         )}
       </Card>
       
-      {isLoadingPolicies ? (
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      ) : filteredPolicies && filteredPolicies.length > 0 ? (
-        <PoliciesTable 
-          policies={filteredPolicies}
-          sortBy={filters.sortBy}
-          sortDirection={filters.sortDirection}
-          onSort={(column) => {
-            setFilters(prev => ({
-              ...prev,
-              sortBy: column,
-              sortDirection: prev.sortBy === column && prev.sortDirection === "asc" ? "desc" : "asc"
-            }));
-          }}
-        />
-      ) : (
-        <div className="flex flex-col items-center justify-center h-64 border rounded-lg bg-gray-50">
-          <div className="text-center">
-            <h3 className="text-lg font-medium mb-2">No Policies Found</h3>
-            <p className="text-muted-foreground">
-              {policies && policies.length > 0 
-                ? "No policies match your current filters. Try adjusting your search criteria."
-                : "No policies have been created yet. Add policies to your clients to see them here."}
-            </p>
+      <div className="w-full max-w-full overflow-hidden">
+        {isLoadingPolicies ? (
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
-        </div>
-      )}
+        ) : filteredPolicies && filteredPolicies.length > 0 ? (
+          <div className="w-full overflow-x-auto">
+            <PoliciesTable 
+              policies={filteredPolicies}
+              sortBy={filters.sortBy}
+              sortDirection={filters.sortDirection}
+              onSort={(column) => {
+                setFilters(prev => ({
+                  ...prev,
+                  sortBy: column,
+                  sortDirection: prev.sortBy === column && prev.sortDirection === "asc" ? "desc" : "asc"
+                }));
+              }}
+            />
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-64 border rounded-lg bg-gray-50">
+            <div className="text-center">
+              <h3 className="text-lg font-medium mb-2">No Policies Found</h3>
+              <p className="text-muted-foreground">
+                {policies && policies.length > 0 
+                  ? "No policies match your current filters. Try adjusting your search criteria."
+                  : "No policies have been created yet. Add policies to your clients to see them here."}
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

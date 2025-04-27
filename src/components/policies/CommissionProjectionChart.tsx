@@ -8,9 +8,16 @@ import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 interface CommissionProjectionChartProps {
   policies: Policy[];
   years?: number;
+  onYearSelect?: (year: number) => void;
+  selectedYear?: number | null;
 }
 
-export default function CommissionProjectionChart({ policies, years = 10 }: CommissionProjectionChartProps) {
+export default function CommissionProjectionChart({ 
+  policies, 
+  years = 10, 
+  onYearSelect,
+  selectedYear 
+}: CommissionProjectionChartProps) {
   const currentYear = new Date().getFullYear();
   const commissionData = calculateYearlyCommissions(policies, currentYear, years);
   
@@ -32,7 +39,7 @@ export default function CommissionProjectionChart({ policies, years = 10 }: Comm
   };
   
   // Calculate the y-axis max value with a 20% buffer to prevent bars from being too tall
-  const maxCommissionAmount = Math.max(...commissionData.map(item => item.amount));
+  const maxCommissionAmount = Math.max(...commissionData.map(item => item.amount), 100); // Set minimum to 100
   const yAxisMax = maxCommissionAmount * 1.2; // 20% buffer
   
   // Custom tooltip formatter
@@ -43,14 +50,23 @@ export default function CommissionProjectionChart({ policies, years = 10 }: Comm
   // Transform data for recharts
   const chartData = commissionData.map((item) => ({
     year: item.year.toString(),
-    commission: item.amount
+    commission: item.amount,
+    isSelected: selectedYear === item.year
   }));
   
+  // Handle bar click for filtering
+  const handleBarClick = (data: any) => {
+    if (onYearSelect && data && data.activePayload && data.activePayload[0]) {
+      const yearClicked = parseInt(data.activePayload[0].payload.year);
+      onYearSelect(yearClicked);
+    }
+  };
+  
   return (
-    <Card className="mb-10">
+    <Card className="mb-8">
       <CardHeader>
         <CardTitle>Commission Projection</CardTitle>
-        <CardDescription className="flex flex-col sm:flex-row gap-4">
+        <CardDescription className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="font-medium">
             Next Year's Projected Commission: <span className="text-green-600">{formatCurrency(nextYearCommission)}</span>
           </div>
@@ -65,13 +81,18 @@ export default function CommissionProjectionChart({ policies, years = 10 }: Comm
         <div className="h-[300px] w-full">
           <ChartContainer config={chartConfig}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
+              <BarChart 
+                data={chartData} 
+                margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
+                onClick={onYearSelect ? handleBarClick : undefined}
+              >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis 
                   dataKey="year"
                   axisLine={false}
                   tickLine={false}
                   tick={{ fontSize: 12 }}
+                  interval={window.innerWidth < 768 ? 1 : 0} // Skip labels on mobile
                 />
                 <YAxis 
                   axisLine={false}
@@ -79,20 +100,28 @@ export default function CommissionProjectionChart({ policies, years = 10 }: Comm
                   tickFormatter={tooltipFormatter}
                   domain={[0, yAxisMax]}
                   tick={{ fontSize: 12 }}
+                  width={60} // Ensure there's room for currency formatting
                 />
                 <Tooltip content={<ChartTooltipContent formatter={tooltipFormatter} />} />
                 <Legend />
                 <Bar 
                   dataKey="commission" 
                   name="Annual Commission" 
-                  fill="var(--color-commission)"
+                  fill={(data) => data.isSelected ? "#047857" : "var(--color-commission)"}
                   radius={[4, 4, 0, 0]}
-                  maxBarSize={commissionData.length > 6 ? 40 : 60} // Adjust bar width based on data points
+                  // Dynamic bar width based on number of data points and screen size
+                  maxBarSize={window.innerWidth < 640 ? 20 : (commissionData.length > 6 ? 40 : 60)}
+                  cursor={onYearSelect ? "pointer" : undefined}
                 />
               </BarChart>
             </ResponsiveContainer>
           </ChartContainer>
         </div>
+        {onYearSelect && (
+          <div className="text-center text-sm text-muted-foreground mt-2">
+            Click on a bar to filter policies by that year
+          </div>
+        )}
       </CardContent>
     </Card>
   );
