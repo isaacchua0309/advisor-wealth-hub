@@ -72,6 +72,12 @@ export function ClientFilters({
     'Closed Won', 
     'Closed Lost'
   ];
+
+  // Policy types for filtering
+  const policyTypes = ['life', 'health', 'investment', 'property', 'auto', 'business'];
+  
+  // Extract unique occupation types from clients for filtering
+  const occupations = ['Financial Services', 'Healthcare', 'Technology', 'Education', 'Manufacturing', 'Retail', 'Other'];
   
   useEffect(() => {
     // Update parent component when filters change
@@ -82,6 +88,9 @@ export function ClientFilters({
     const resetFilters = {
       ageGroup: null,
       pipelineStage: null,
+      policyType: null,
+      occupation: null,
+      renewalPeriod: null,
       minValue: 0,
       maxValue: maxPolicyValue,
     };
@@ -115,6 +124,9 @@ export function ClientFilters({
           
           {(localFilters.ageGroup !== null || 
             localFilters.pipelineStage !== null || 
+            localFilters.policyType !== null ||
+            localFilters.occupation !== null ||
+            localFilters.renewalPeriod !== null ||
             localFilters.minValue > 0 || 
             localFilters.maxValue < maxPolicyValue) && (
             <Button 
@@ -178,6 +190,73 @@ export function ClientFilters({
                           {stage}
                         </SelectItem>
                       ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Policy Type</label>
+                  <Select 
+                    value={localFilters.policyType || "any"}
+                    onValueChange={(value) => setLocalFilters({
+                      ...localFilters,
+                      policyType: value === "any" ? null : value
+                    })}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Any policy type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="any">Any policy type</SelectItem>
+                      {policyTypes.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type.charAt(0).toUpperCase() + type.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Occupation</label>
+                  <Select 
+                    value={localFilters.occupation || "any"}
+                    onValueChange={(value) => setLocalFilters({
+                      ...localFilters,
+                      occupation: value === "any" ? null : value
+                    })}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Any occupation" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="any">Any occupation</SelectItem>
+                      {occupations.map((occupation) => (
+                        <SelectItem key={occupation} value={occupation}>
+                          {occupation}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Renewal Period</label>
+                  <Select 
+                    value={localFilters.renewalPeriod || "any"}
+                    onValueChange={(value) => setLocalFilters({
+                      ...localFilters,
+                      renewalPeriod: value === "any" ? null : value
+                    })}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Any renewal period" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="any">Any renewal period</SelectItem>
+                      <SelectItem value="30">Next 30 days</SelectItem>
+                      <SelectItem value="60">Next 60 days</SelectItem>
+                      <SelectItem value="90">Next 90 days</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

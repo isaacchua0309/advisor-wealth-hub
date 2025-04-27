@@ -85,6 +85,14 @@ export default function DashboardLayout() {
       <div className="flex-1 overflow-auto">
         <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-6">
           <SidebarTrigger />
+          
+          {/* Quick action buttons */}
+          <div className="ml-auto flex items-center gap-2">
+            <Link to="/clients/new">
+              <PlusCircle className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
+              <span className="sr-only">Add Client</span>
+            </Link>
+          </div>
         </header>
         <main className="grid flex-1 items-start gap-4 p-4 md:p-6">
           <div className="w-full max-w-[1600px] mx-auto">

@@ -5,8 +5,10 @@ import { useClients } from "@/hooks/useClients";
 import { AddClientDialog } from "@/components/clients/AddClientDialog";
 import { ClientsTable } from "@/components/clients/ClientsTable";
 import { ClientFilters } from "@/components/clients/ClientFilters";
+import { ClientKPICards } from "@/components/clients/ClientKPICards";
 import type { Client, CreateClientInput } from "@/types/client";
 import type { CreatePolicyInput } from "@/types/policy";
+import { addDays, isWithinInterval, parseISO, isValid } from "date-fns";
 
 export default function ClientList() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -15,6 +17,9 @@ export default function ClientList() {
   const [filters, setFilters] = useState({
     ageGroup: null as string | null,
     pipelineStage: null as Client['pipeline_stage'] | null,
+    policyType: null as string | null,
+    occupation: null as string | null,
+    renewalPeriod: null as string | null,
     minValue: 0,
     maxValue: 1000000, // Default max value
   });
@@ -44,15 +49,42 @@ export default function ClientList() {
     // Pipeline stage filter
     const stageMatch = !filters.pipelineStage || client.pipeline_stage === filters.pipelineStage;
     
+    // Policy type filter
+    const policyTypeMatch = !filters.policyType || (policyMap[client.id] || []).some(
+      policy => policy.policy_type === filters.policyType
+    );
+
+    // Occupation filter 
+    const occupationMatch = !filters.occupation || client.occupation === filters.occupation;
+
+    // Renewal period filter
+    const renewalPeriodMatch = !filters.renewalPeriod || (policyMap[client.id] || []).some(policy => {
+      if (!policy.end_date) return false;
+      
+      const endDate = parseISO(policy.end_date);
+      if (!isValid(endDate)) return false;
+      
+      const today = new Date();
+      const futureDate = addDays(today, parseInt(filters.renewalPeriod as string, 10));
+      
+      return isWithinInterval(endDate, { start: today, end: futureDate });
+    });
+    
     // Value filter
     const clientPolicies = policyMap[client.id] || [];
     const clientValue = clientPolicies.reduce(
-      (sum, policy) => sum + (policy.premium || 0), 
+      (sum, policy) => sum + (policy.value || 0), 
       0
     );
     const valueMatch = clientValue >= filters.minValue && clientValue <= filters.maxValue;
     
-    return textMatch && ageGroupMatch && stageMatch && valueMatch;
+    return textMatch && 
+           ageGroupMatch && 
+           stageMatch && 
+           policyTypeMatch && 
+           occupationMatch && 
+           renewalPeriodMatch && 
+           valueMatch;
   }) ?? [];
   
   const handleCreateClient = async (client: CreateClientInput, policies: CreatePolicyInput[]) => {
@@ -82,6 +114,9 @@ export default function ClientList() {
           isPending={createClient.isPending}
         />
       </div>
+
+      {/* KPI Cards Section */}
+      <ClientKPICards />
 
       <Card>
         <div className="p-4 border-b">
