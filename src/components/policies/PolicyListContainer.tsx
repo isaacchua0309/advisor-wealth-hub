@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Policy } from "@/types/policy";
 import PoliciesTable from "@/components/policies/PoliciesTable";
@@ -6,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { calculateDaysUntilRenewal, formatCurrency } from "./PolicyUtils";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "react-router-dom";
 
 interface PolicyListContainerProps {
   isLoadingPolicies: boolean;
@@ -69,22 +69,30 @@ export default function PolicyListContainer({
                   >
                     <div className="flex justify-between items-start">
                       <h3 className="font-medium text-sm truncate max-w-[70%]">
-                        <a href={`/clients/${policy.client_id}`} className="text-blue-600 hover:text-blue-800 hover:underline">
+                        <Link 
+                          to={`/clients/${policy.client_id}#policies`}
+                          className="text-blue-600 hover:text-blue-800 hover:underline"
+                        >
                           {policy.policy_name}
-                        </a>
+                        </Link>
                       </h3>
-                      <div className={`px-2 py-1 rounded-full text-xs ${
-                        policy.status === 'active' ? 'bg-green-100 text-green-800' : 
-                        policy.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
-                        'bg-red-100 text-red-800'
-                      }`}>
+                      <Badge 
+                        variant={policy.status === 'active' ? 'success' : 
+                                policy.status === 'pending' ? 'warning' : 'destructive'}
+                      >
                         {policy.status}
-                      </div>
+                      </Badge>
                     </div>
                     
                     <div className="mt-2 text-xs text-muted-foreground truncate">
                       {policy.policy_type} • {policy.provider || 'No provider'}
                     </div>
+                    
+                    {policy.end_date && (
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        Ends: {new Date(policy.end_date).toLocaleDateString()}
+                      </div>
+                    )}
                     
                     {isRenewingSoon && (
                       <div className="mt-2 flex items-center">

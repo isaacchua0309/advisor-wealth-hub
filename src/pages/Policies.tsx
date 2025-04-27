@@ -1,10 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { useClients } from "@/hooks/useClients";
-import { Policy } from "@/types/policy";
 import { Card } from "@/components/ui/card";
 import PolicyFilters from "@/components/policies/PolicyFilters";
-import PolicyKPICards from "@/components/policies/PolicyKPICards";
+import PoliciesKPI from "@/components/policies/PoliciesKPI";
 import CommissionProjectionChart from "@/components/policies/CommissionProjectionChart";
 import { calculateTotalExpectedCommission } from "@/components/policies/PolicyUtils";
 import YearFilter from "@/components/policies/YearFilter";
@@ -277,7 +275,6 @@ export default function Policies() {
     }));
   };
   
-  // Check if any filters are active
   const hasActiveFilters = 
     filters.search !== "" ||
     filters.policyType !== "all" ||
@@ -306,13 +303,13 @@ export default function Policies() {
         </div>
       </div>
       
-      <div className="mb-8">
+      <div className="mb-6">
         {!isLoadingPolicies && policies && (
-          <PolicyKPICards policies={filteredPolicies} />
+          <PoliciesKPI policies={filteredPolicies} />
         )}
       </div>
       
-      <div className="mb-8">
+      <div className="mb-6">
         {!isLoadingPolicies && policies && (
           <CommissionProjectionChart 
             policies={filteredPolicies}
@@ -323,7 +320,7 @@ export default function Policies() {
         )}
       </div>
       
-      <Card className="mb-8 p-4 md:p-6 bg-slate-50/30 border-slate-100">
+      <Card className="mb-6 p-4 md:p-6 bg-slate-50/30 border-slate-100">
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center gap-2">
             <h3 className="text-lg font-medium">Filters</h3>
@@ -365,7 +362,7 @@ export default function Policies() {
         )}
       </Card>
       
-      <div className="w-full max-w-full mb-8 overflow-hidden">
+      <div className="w-full max-w-full mb-6 overflow-hidden">
         <PolicyListContainer 
           isLoadingPolicies={isLoadingPolicies}
           policies={policies}

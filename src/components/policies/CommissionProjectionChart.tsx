@@ -1,4 +1,3 @@
-
 import { Policy } from "@/types/policy";
 import { calculateYearlyCommissions, formatCurrency } from "./PolicyUtils";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -33,26 +32,21 @@ export default function CommissionProjectionChart({
   
   const currentYear = new Date().getFullYear();
 
-  // Filter policies by type if needed
   const filteredPolicies = policyTypeFilter === "all" 
     ? policies 
     : policies.filter(p => p.policy_type === policyTypeFilter);
   
   const commissionData = calculateYearlyCommissions(filteredPolicies, currentYear, years);
   
-  // Find the year with the highest commission for highlighting
   const maxCommissionYear = commissionData.reduce(
     (max, current) => current.amount > max.amount ? current : max, 
     { year: 0, amount: 0 }
   );
   
-  // Calculate the next year's projected commission
   const nextYearCommission = commissionData.length > 1 ? commissionData[1].amount : 0;
   
-  // Get unique policy types for the filter
   const policyTypes = Array.from(new Set(policies.map(p => p.policy_type))).sort();
   
-  // Configure the chart theme
   const chartConfig = {
     commission: {
       label: "Annual Commission",
@@ -68,17 +62,13 @@ export default function CommissionProjectionChart({
     }
   };
   
-  // Custom tooltip formatter
   const tooltipFormatter = (value: number) => {
     return formatCurrency(value);
   };
   
-  // Transform data for recharts with first year and ongoing breakdown
   const chartData = commissionData.map((item) => {
-    // Simple estimation of first year vs ongoing split
-    // In real app, this would calculate from actual policies
-    const firstYearPart = item.amount * 0.4; // Simplified estimate
-    const ongoingPart = item.amount * 0.6; // Simplified estimate
+    const firstYearPart = item.amount * 0.4;
+    const ongoingPart = item.amount * 0.6;
     
     return {
       year: item.year.toString(),
@@ -89,7 +79,6 @@ export default function CommissionProjectionChart({
     };
   });
   
-  // Handle bar click for filtering
   const handleBarClick = (data: any) => {
     if (onYearSelect && data && data.activePayload && data.activePayload[0]) {
       const yearClicked = parseInt(data.activePayload[0].payload.year);
@@ -97,7 +86,6 @@ export default function CommissionProjectionChart({
     }
   };
   
-  // Check for mobile screens
   useEffect(() => {
     const checkIfMobile = () => {
       setIsMobile(window.innerWidth < 640);
@@ -111,7 +99,6 @@ export default function CommissionProjectionChart({
     };
   }, []);
 
-  // Dynamically calculate max bar size based on number of years
   const dynamicMaxBarSize = Math.min(60, 300 / commissionData.length);
   
   return (
@@ -149,9 +136,9 @@ export default function CommissionProjectionChart({
       </CardHeader>
       <CardContent className="p-0 sm:p-4">
         <div className="w-full overflow-hidden">
-          <div className="min-w-[500px] chart-container">
+          <div className="min-w-[500px] h-[220px] sm:h-[250px]">
             <ChartContainer config={chartConfig}>
-              <ResponsiveContainer width="100%" aspect={2.5}>
+              <ResponsiveContainer width="100%" aspect={3.5}>
                 <BarChart 
                   data={chartData} 
                   margin={{ top: 10, right: 20, left: 10, bottom: 20 }}
@@ -178,7 +165,6 @@ export default function CommissionProjectionChart({
                   <Tooltip content={
                     <ChartTooltipContent 
                       formatter={(value, name) => {
-                        // Custom tooltip content
                         if (name === "commission") return [formatCurrency(value as number), "Total"];
                         if (name === "firstYear") return [formatCurrency(value as number), "First Year"];
                         if (name === "ongoing") return [formatCurrency(value as number), "Ongoing"];
