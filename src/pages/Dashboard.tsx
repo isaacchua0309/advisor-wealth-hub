@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { 
   Card, 
@@ -48,22 +49,25 @@ import { DashboardKPICards } from "@/components/dashboard/DashboardKPICards";
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const dashboardQuery = useDashboard();
   const { 
-    totalClients,
-    activeClients,
-    activePolicies,
-    pendingTasks,
-    annualCommission,
-    pipelineData,
-    upcomingTasks,
-    recentClients,
-    pendingCommissions,
-    projectedIncome,
-    yearToDateCommission,
-    upcomingRenewals,
-    commissionGoal,
+    data: {
+      totalClients,
+      activeClients,
+      activePolicies,
+      pendingTasks,
+      annualCommission,
+      pipelineData,
+      upcomingTasks,
+      recentClients,
+      pendingCommissions,
+      projectedIncome,
+      yearToDateCommission,
+      upcomingRenewals,
+      commissionGoal,
+    } = {}, // Provide default empty object for destructuring
     isLoading,
-  } = useDashboard();
+  } = dashboardQuery;
 
   const [progressValue, setProgressValue] = useState(0);
 
@@ -197,8 +201,8 @@ export default function Dashboard() {
         </Card>
         
         <CommissionGoalProgress 
-          yearToDateCommission={yearToDateCommission}
-          commissionGoal={commissionGoal}
+          yearToDateCommission={yearToDateCommission || 0}
+          commissionGoal={commissionGoal || 10000}
           currentYear={currentYear}
         />
       </div>
