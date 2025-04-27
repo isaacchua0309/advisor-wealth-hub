@@ -1,4 +1,3 @@
-
 import { Policy } from "@/types/policy";
 import { calculateYearlyCommissions, formatCurrency } from "./PolicyUtils";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -22,12 +21,12 @@ interface ChartDataItem {
   isSelected: boolean;
 }
 
-export default function CommissionProjectionChart({ 
+const CommissionProjectionChart = ({ 
   policies, 
   years = 10, 
   onYearSelect,
   selectedYear 
-}: CommissionProjectionChartProps) {
+}: CommissionProjectionChartProps) => {
   const [isMobile, setIsMobile] = useState(false);
   const [policyTypeFilter, setPolicyTypeFilter] = useState<string>("all");
   
@@ -163,7 +162,6 @@ export default function CommissionProjectionChart({
                     width={60}
                     tickCount={5}
                     scale="linear"
-                    nice
                   />
                   <Tooltip content={
                     <ChartTooltipContent 
@@ -203,4 +201,6 @@ export default function CommissionProjectionChart({
       </CardContent>
     </Card>
   );
-}
+};
+
+export default CommissionProjectionChart;

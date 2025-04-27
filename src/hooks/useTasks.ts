@@ -15,6 +15,7 @@ export type Task = {
   status?: 'pending' | 'completed' | 'overdue';
   task_type?: string;
   user_id: string;
+  created_at: string;
 };
 
 export function useTasks() {

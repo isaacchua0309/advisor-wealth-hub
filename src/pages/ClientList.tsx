@@ -14,14 +14,14 @@ export default function ClientList() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
-  const [filters, setFilters] = useState({
-    ageGroup: null as string | null,
-    pipelineStage: null as Client['pipeline_stage'] | null,
-    policyType: null as string | null,
-    occupation: null as string | null,
-    renewalPeriod: null as string | null,
+  const [filters, setFilters] = useState<ClientFilters>({
+    ageGroup: null,
+    pipelineStage: null,
+    policyType: null,
+    occupation: null,
+    renewalPeriod: null,
     minValue: 0,
-    maxValue: 1000000, // Default max value
+    maxValue: 1000000,
   });
   
   const { 

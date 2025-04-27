@@ -19,6 +19,8 @@ export type Database = {
           occupation: string | null
           phone: string | null
           pipeline_stage: Database["public"]["Enums"]["deal_stage"]
+          policy_type: string | null
+          renewal_period: string | null
           updated_at: string
           user_id: string
         }
@@ -31,6 +33,8 @@ export type Database = {
           occupation?: string | null
           phone?: string | null
           pipeline_stage?: Database["public"]["Enums"]["deal_stage"]
+          policy_type?: string | null
+          renewal_period?: string | null
           updated_at?: string
           user_id: string
         }
@@ -43,6 +47,8 @@ export type Database = {
           occupation?: string | null
           phone?: string | null
           pipeline_stage?: Database["public"]["Enums"]["deal_stage"]
+          policy_type?: string | null
+          renewal_period?: string | null
           updated_at?: string
           user_id?: string
         }

@@ -1,4 +1,3 @@
-
 export interface Client {
   id: string;
   name: string;
@@ -18,4 +17,14 @@ export interface CreateClientInput {
   occupation?: string;
   age_group?: string;
   pipeline_stage?: 'Lead' | 'Contacted' | 'Proposal Sent' | 'Negotiation' | 'Closed Won' | 'Closed Lost';
+}
+
+export interface ClientFilters {
+  ageGroup: string | null;
+  pipelineStage: Client['pipeline_stage'] | null;
+  policyType: string | null;
+  occupation: string | null;
+  renewalPeriod: string | null;
+  minValue: number;
+  maxValue: number;
 }
