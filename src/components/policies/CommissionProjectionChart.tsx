@@ -40,10 +40,6 @@ export default function CommissionProjectionChart({
     }
   };
   
-  // Calculate the y-axis max value with a 20% buffer to prevent bars from being too tall
-  const maxCommissionAmount = Math.max(...commissionData.map(item => item.amount), 100); // Set minimum to 100
-  const yAxisMax = maxCommissionAmount * 1.2; // 20% buffer
-  
   // Custom tooltip formatter
   const tooltipFormatter = (value: number) => {
     return formatCurrency(value);
@@ -78,16 +74,11 @@ export default function CommissionProjectionChart({
     };
   }, []);
 
-  // Custom style function for bar fills
-  const getBarFill = (entry: any) => {
-    if (entry.isSelected) {
-      return "#047857";
-    }
-    return "var(--color-commission)";
-  };
+  // Dynamically calculate max bar size based on number of years
+  const dynamicMaxBarSize = Math.min(60, 300 / commissionData.length);
   
   return (
-    <Card className="mb-10">
+    <Card className="mb-6">
       <CardHeader className="pb-2">
         <CardTitle className="text-xl">Commission Projection</CardTitle>
         <CardDescription className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4 sm:items-center">
@@ -102,13 +93,13 @@ export default function CommissionProjectionChart({
         </CardDescription>
       </CardHeader>
       <CardContent className="p-0 sm:p-4">
-        <div className="chart-container w-full overflow-x-auto overflow-y-hidden">
-          <div className="h-[250px] sm:h-[300px] min-w-[500px]">
+        <div className="w-full overflow-x-auto overflow-y-hidden">
+          <div className="min-w-[500px]">
             <ChartContainer config={chartConfig}>
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" aspect={2.5}>
                 <BarChart 
                   data={chartData} 
-                  margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
+                  margin={{ top: 10, right: 20, left: 10, bottom: 20 }}
                   onClick={onYearSelect ? handleBarClick : undefined}
                 >
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -117,13 +108,14 @@ export default function CommissionProjectionChart({
                     axisLine={false}
                     tickLine={false}
                     tick={{ fontSize: 10 }}
-                    interval={isMobile ? 1 : 0}
+                    interval={isMobile ? Math.ceil(commissionData.length / 6) : 0}
                   />
                   <YAxis 
                     axisLine={false}
                     tickLine={false}
                     tickFormatter={tooltipFormatter}
-                    domain={[0, yAxisMax]}
+                    domain={[0, 'auto']}
+                    nice
                     tick={{ fontSize: 10 }}
                     width={60}
                   />
@@ -135,12 +127,12 @@ export default function CommissionProjectionChart({
                     fillOpacity={0.9}
                     className="cursor-pointer"
                     radius={[4, 4, 0, 0]}
-                    maxBarSize={isMobile ? 20 : (commissionData.length > 6 ? 40 : 60)}
+                    maxBarSize={dynamicMaxBarSize}
                     cursor={onYearSelect ? "pointer" : undefined}
                     style={{
                       cursor: onYearSelect ? "pointer" : "default",
                     }}
-                    fill={(entry) => getBarFill(entry)}
+                    fill={(entry) => entry.isSelected ? "#047857" : "var(--color-commission)"}
                   />
                 </BarChart>
               </ResponsiveContainer>

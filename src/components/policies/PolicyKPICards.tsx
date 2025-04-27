@@ -8,13 +8,13 @@ interface PolicyKPICardsProps {
   policies: Policy[];
 }
 
-export default function PolicyKPICards({ policies }: PolicyKPICardsProps) {
-  // Calculate KPIs
+/**
+ * Helper function to calculate the KPI metrics for total collected commission and this year's commission
+ */
+const calculateKpiMetrics = (policies: Policy[]) => {
+  // Filter active policies
   const activePolicies = policies.filter(p => p.status?.toLowerCase() === "active");
   
-  const totalActivePoliciesCount = activePolicies.length;
-  
-  // Calculate total commission collected so far
   const currentDate = new Date();
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
@@ -29,15 +29,15 @@ export default function PolicyKPICards({ policies }: PolicyKPICardsProps) {
       const startYear = startDate.getFullYear();
       const yearsPassed = currentYear - startYear;
       
-      // Check if first year commission should be included in total collected
+      // First year commission - check if we've passed the policy start date
       if (yearsPassed >= 0) {
-        // Check if we've passed the anniversary date this year
         const anniversaryDatePassed = 
           yearsPassed > 0 || 
           (currentMonth > startDate.getMonth() || 
            (currentMonth === startDate.getMonth() && currentDay >= startDate.getDate()));
         
         if (anniversaryDatePassed) {
+          // Add to total collected
           totalCollectedCommission += policy.first_year_commission || 0;
           
           // Add to this year's commission if the policy started this year
@@ -66,6 +66,20 @@ export default function PolicyKPICards({ policies }: PolicyKPICardsProps) {
     }
   });
   
+  return {
+    totalCollectedCommission,
+    thisYearCommission
+  };
+};
+
+export default function PolicyKPICards({ policies }: PolicyKPICardsProps) {
+  // Calculate KPIs
+  const activePolicies = policies.filter(p => p.status?.toLowerCase() === "active");
+  const totalActivePoliciesCount = activePolicies.length;
+  
+  // Get commission metrics
+  const { totalCollectedCommission, thisYearCommission } = calculateKpiMetrics(policies);
+  
   const policiesRenewingSoon = policies.filter(policy => 
     isRenewingSoon(policy, 90)
   ).length;
@@ -75,6 +89,7 @@ export default function PolicyKPICards({ policies }: PolicyKPICardsProps) {
     : null;
     
   // Get next year's projected commission
+  const currentYear = new Date().getFullYear();
   const commissionProjection = calculateYearlyCommissions(policies, currentYear, 2);
   const nextYearCommission = commissionProjection.length > 1 ? commissionProjection[1].amount : 0;
 
