@@ -65,7 +65,7 @@ export default function PoliciesTable({
                 sortBy={sortBy}
                 sortDirection={sortDirection as "asc" | "desc"}
                 onSort={handleSort}
-                className="sticky left-0 bg-background z-10"
+                className="sticky left-0 bg-background z-10 w-40"
               >
                 Policy Name
               </PolicyTableHead>
@@ -75,7 +75,7 @@ export default function PoliciesTable({
                 sortBy={sortBy}
                 sortDirection={sortDirection as "asc" | "desc"}
                 onSort={handleSort}
-                className="sticky left-[150px] bg-background z-10"
+                className="sticky left-[150px] bg-background z-10 w-32"
               >
                 Policy Type
               </PolicyTableHead>
@@ -85,6 +85,7 @@ export default function PoliciesTable({
                 sortBy={sortBy}
                 sortDirection={sortDirection as "asc" | "desc"}
                 onSort={handleSort}
+                className="w-40"
               >
                 Provider
               </PolicyTableHead>
@@ -94,7 +95,7 @@ export default function PoliciesTable({
                 sortBy={sortBy}
                 sortDirection={sortDirection as "asc" | "desc"}
                 onSort={handleSort}
-                className="text-right"
+                className="text-right w-28"
               >
                 Premium
               </PolicyTableHead>
@@ -104,7 +105,7 @@ export default function PoliciesTable({
                 sortBy={sortBy}
                 sortDirection={sortDirection as "asc" | "desc"}
                 onSort={handleSort}
-                className="text-right"
+                className="text-right w-28"
               >
                 Value
               </PolicyTableHead>
@@ -114,7 +115,7 @@ export default function PoliciesTable({
                 sortBy={sortBy}
                 sortDirection={sortDirection as "asc" | "desc"}
                 onSort={handleSort}
-                className="text-right"
+                className="text-right w-32"
               >
                 First Year Comm.
               </PolicyTableHead>
@@ -124,7 +125,7 @@ export default function PoliciesTable({
                 sortBy={sortBy}
                 sortDirection={sortDirection as "asc" | "desc"}
                 onSort={handleSort}
-                className="text-right"
+                className="text-right w-32"
               >
                 Annual Ongoing Comm.
               </PolicyTableHead>
@@ -134,7 +135,7 @@ export default function PoliciesTable({
                 sortBy={sortBy}
                 sortDirection={sortDirection as "asc" | "desc"}
                 onSort={handleSort}
-                className="text-right"
+                className="text-right w-32"
               >
                 Total Expected Comm.
               </PolicyTableHead>
@@ -144,20 +145,20 @@ export default function PoliciesTable({
                 sortBy={sortBy}
                 sortDirection={sortDirection as "asc" | "desc"}
                 onSort={handleSort}
-                className="text-right"
+                className="text-right w-32"
                 tooltip="Premium as a percentage of policy value"
               >
                 Premium/Value Ratio
               </PolicyTableHead>
               
-              <PolicyTableHead className="text-right">Payment Structure</PolicyTableHead>
+              <PolicyTableHead className="text-right w-36">Payment Structure</PolicyTableHead>
               
               <PolicyTableHead 
                 column="policy_age"
                 sortBy={sortBy}
                 sortDirection={sortDirection as "asc" | "desc"}
                 onSort={handleSort}
-                className="text-right"
+                className="text-right w-24"
               >
                 Policy Age
               </PolicyTableHead>
@@ -167,6 +168,7 @@ export default function PoliciesTable({
                 sortBy={sortBy}
                 sortDirection={sortDirection as "asc" | "desc"}
                 onSort={handleSort}
+                className="w-28"
               >
                 Start Date
               </PolicyTableHead>
@@ -176,11 +178,12 @@ export default function PoliciesTable({
                 sortBy={sortBy}
                 sortDirection={sortDirection as "asc" | "desc"}
                 onSort={handleSort}
+                className="w-28"
               >
                 End Date
               </PolicyTableHead>
               
-              <PolicyTableHead>Next Renewal</PolicyTableHead>
+              <PolicyTableHead className="w-28">Next Renewal</PolicyTableHead>
               
               <PolicyTableHead 
                 column="days_until_renewal"
@@ -188,22 +191,24 @@ export default function PoliciesTable({
                 sortDirection={sortDirection as "asc" | "desc"}
                 onSort={handleSort}
                 tooltip="Days remaining until next renewal"
+                className="w-32"
               >
                 Days to Renewal
               </PolicyTableHead>
               
-              <PolicyTableHead>Commission Maturity</PolicyTableHead>
+              <PolicyTableHead className="w-36">Commission Maturity</PolicyTableHead>
               
               <PolicyTableHead 
                 column="status"
                 sortBy={sortBy}
                 sortDirection={sortDirection as "asc" | "desc"}
                 onSort={handleSort}
+                className="w-24"
               >
                 Status
               </PolicyTableHead>
               
-              <PolicyTableHead className="text-right">Actions</PolicyTableHead>
+              <PolicyTableHead className="text-right w-24">Actions</PolicyTableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

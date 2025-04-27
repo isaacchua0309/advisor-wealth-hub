@@ -9,6 +9,7 @@ import YearFilter from "@/components/policies/YearFilter";
 import PolicyListContainer from "@/components/policies/PolicyListContainer";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
+import { Policy } from "@/types/policy";
 
 export type PolicyFilters = {
   search: string;

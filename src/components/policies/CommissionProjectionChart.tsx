@@ -1,3 +1,4 @@
+
 import { Policy } from "@/types/policy";
 import { calculateYearlyCommissions, formatCurrency } from "./PolicyUtils";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -99,6 +100,7 @@ export default function CommissionProjectionChart({
     };
   }, []);
 
+  // Calculate dynamic bar size based on data length
   const dynamicMaxBarSize = Math.min(60, 300 / commissionData.length);
   
   return (
@@ -156,11 +158,12 @@ export default function CommissionProjectionChart({
                     axisLine={false}
                     tickLine={false}
                     tickFormatter={tooltipFormatter}
-                    domain={[0, 'auto']}
+                    domain={[0, 'dataMax']}
                     tick={{ fontSize: 10 }}
                     width={60}
                     tickCount={5}
                     scale="linear"
+                    nice
                   />
                   <Tooltip content={
                     <ChartTooltipContent 

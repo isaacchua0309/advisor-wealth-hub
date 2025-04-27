@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Policy } from "@/types/policy";
 import PoliciesTable from "@/components/policies/PoliciesTable";
@@ -60,6 +61,11 @@ export default function PolicyListContainer({
                 const daysUntilRenewal = calculateDaysUntilRenewal(policy);
                 const isRenewingSoon = daysUntilRenewal !== null && daysUntilRenewal <= 30;
                 
+                let statusVariant: "default" | "secondary" | "destructive" | "outline" | "success" | "warning" = "outline";
+                if (policy.status === 'active') statusVariant = "success";
+                else if (policy.status === 'pending') statusVariant = "warning";
+                else if (policy.status === 'expired' || policy.status === 'cancelled') statusVariant = "destructive";
+                
                 return (
                   <div 
                     key={policy.id} 
@@ -76,10 +82,7 @@ export default function PolicyListContainer({
                           {policy.policy_name}
                         </Link>
                       </h3>
-                      <Badge 
-                        variant={policy.status === 'active' ? 'success' : 
-                                policy.status === 'pending' ? 'warning' : 'destructive'}
-                      >
+                      <Badge variant={statusVariant}>
                         {policy.status}
                       </Badge>
                     </div>
