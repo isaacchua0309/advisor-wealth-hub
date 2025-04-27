@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useClients } from "@/hooks/useClients";
 import { Policy } from "@/types/policy";
@@ -5,6 +6,8 @@ import { Card } from "@/components/ui/card";
 import PolicyFilters from "@/components/policies/PolicyFilters";
 import PoliciesTable from "@/components/policies/PoliciesTable";
 import { Loader2 } from "lucide-react";
+import PolicyKPICards from "@/components/policies/PolicyKPICards";
+import { calculateTotalExpectedCommission } from "@/components/policies/PolicyUtils";
 
 // Define filter state type
 export type PolicyFilters = {
@@ -16,6 +19,10 @@ export type PolicyFilters = {
   premiumRange: [number, number];
   commissionRange: [number, number];
   firstYearCommissionRange: [number, number];
+  showRenewingThisYear: boolean;
+  showTopByCommission: boolean;
+  sortBy: string;
+  sortDirection: "asc" | "desc";
 };
 
 export default function Policies() {
@@ -35,6 +42,10 @@ export default function Policies() {
     premiumRange: [0, 1000000],
     commissionRange: [0, 100],
     firstYearCommissionRange: [0, 100000],
+    showRenewingThisYear: false,
+    showTopByCommission: false,
+    sortBy: "policy_name",
+    sortDirection: "asc"
   });
 
   // Initial filter ranges based on data
@@ -58,7 +69,7 @@ export default function Policies() {
     }
   }, [policies]);
 
-  // Filter policies based on current filters
+  // Filter and sort policies based on current filters
   useEffect(() => {
     if (!policies) {
       setFilteredPolicies([]);
@@ -68,7 +79,7 @@ export default function Policies() {
     // Make TypeScript happy by explicitly casting policies to Policy[]
     const typedPolicies = policies as Policy[];
 
-    const filtered = typedPolicies.filter(policy => {
+    let filtered = typedPolicies.filter(policy => {
       // Search by policy name (case insensitive)
       const searchMatch = !filters.search || 
         policy.policy_name.toLowerCase().includes(filters.search.toLowerCase());
@@ -105,12 +116,108 @@ export default function Policies() {
         (policy.first_year_commission >= filters.firstYearCommissionRange[0] && 
          policy.first_year_commission <= filters.firstYearCommissionRange[1]);
       
+      // Filter for policies renewing this year
+      const renewingThisYearMatch = !filters.showRenewingThisYear || isRenewingThisYear(policy);
+      
       return searchMatch && typeMatch && paymentStructureMatch && statusMatch && 
-        durationMatch && premiumMatch && commissionMatch && firstYearCommissionMatch;
+        durationMatch && premiumMatch && commissionMatch && firstYearCommissionMatch &&
+        renewingThisYearMatch;
     });
+    
+    // Sort policies based on selected sort option
+    filtered = sortPolicies(filtered, filters.sortBy, filters.sortDirection);
+    
+    // Apply top 10 by commission filter if selected
+    if (filters.showTopByCommission) {
+      filtered = filtered
+        .sort((a, b) => {
+          const commissionA = calculateTotalExpectedCommission(a);
+          const commissionB = calculateTotalExpectedCommission(b);
+          return commissionB - commissionA;
+        })
+        .slice(0, 10);
+    }
     
     setFilteredPolicies(filtered);
   }, [policies, filters]);
+
+  // Check if a policy is renewing this year
+  const isRenewingThisYear = (policy: Policy): boolean => {
+    if (!policy.start_date) return false;
+    
+    const startDate = new Date(policy.start_date);
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    
+    // Create the next renewal date for this year
+    const renewalDate = new Date(startDate);
+    renewalDate.setFullYear(currentYear);
+    
+    // If the renewal date has passed, check next year's renewal
+    if (renewalDate < currentDate) {
+      renewalDate.setFullYear(currentYear + 1);
+    }
+    
+    // Check if renewal is within this calendar year
+    return renewalDate.getFullYear() === currentYear;
+  };
+  
+  // Sort policies based on selected criteria
+  const sortPolicies = (policies: Policy[], sortBy: string, sortDirection: "asc" | "desc"): Policy[] => {
+    return [...policies].sort((a, b) => {
+      let valueA: any;
+      let valueB: any;
+      
+      switch (sortBy) {
+        case "policy_name":
+          valueA = a.policy_name || "";
+          valueB = b.policy_name || "";
+          return sortDirection === "asc" 
+            ? valueA.localeCompare(valueB)
+            : valueB.localeCompare(valueA);
+          
+        case "premium":
+          valueA = a.premium || 0;
+          valueB = b.premium || 0;
+          break;
+          
+        case "value":
+          valueA = a.value || 0;
+          valueB = b.value || 0;
+          break;
+          
+        case "first_year_commission":
+          valueA = a.first_year_commission || 0;
+          valueB = b.first_year_commission || 0;
+          break;
+          
+        case "annual_ongoing_commission":
+          valueA = a.annual_ongoing_commission || 0;
+          valueB = b.annual_ongoing_commission || 0;
+          break;
+          
+        case "total_expected_commission":
+          valueA = calculateTotalExpectedCommission(a);
+          valueB = calculateTotalExpectedCommission(b);
+          break;
+          
+        case "policy_age":
+          valueA = a.start_date ? new Date().getTime() - new Date(a.start_date).getTime() : 0;
+          valueB = b.start_date ? new Date().getTime() - new Date(b.start_date).getTime() : 0;
+          break;
+          
+        case "start_date":
+          valueA = a.start_date ? new Date(a.start_date).getTime() : 0;
+          valueB = b.start_date ? new Date(b.start_date).getTime() : 0;
+          break;
+          
+        default:
+          return 0;
+      }
+      
+      return sortDirection === "asc" ? valueA - valueB : valueB - valueA;
+    });
+  };
 
   const clearFilters = () => {
     setFilters({
@@ -122,6 +229,10 @@ export default function Policies() {
       premiumRange: [0, maxPremium],
       commissionRange: [0, 100],
       firstYearCommissionRange: [0, maxFirstYearCommission],
+      showRenewingThisYear: false,
+      showTopByCommission: false,
+      sortBy: "policy_name",
+      sortDirection: "asc"
     });
   };
 
@@ -136,7 +247,12 @@ export default function Policies() {
         </div>
       </div>
       
-      <Card className="mb-6 p-4">
+      {/* KPI Cards Section */}
+      {!isLoadingPolicies && policies && (
+        <PolicyKPICards policies={filteredPolicies} />
+      )}
+      
+      <Card className="mb-6 p-4 mt-6">
         <PolicyFilters 
           filters={filters} 
           setFilters={setFilters}
@@ -151,7 +267,18 @@ export default function Policies() {
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : filteredPolicies && filteredPolicies.length > 0 ? (
-        <PoliciesTable policies={filteredPolicies} />
+        <PoliciesTable 
+          policies={filteredPolicies}
+          sortBy={filters.sortBy}
+          sortDirection={filters.sortDirection}
+          onSort={(column) => {
+            setFilters(prev => ({
+              ...prev,
+              sortBy: column,
+              sortDirection: prev.sortBy === column && prev.sortDirection === "asc" ? "desc" : "asc"
+            }));
+          }}
+        />
       ) : (
         <div className="flex flex-col items-center justify-center h-64 border rounded-lg bg-gray-50">
           <div className="text-center">

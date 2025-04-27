@@ -23,7 +23,6 @@ import {
   ArrowUp, 
   ChevronDown, 
   ExternalLink, 
-  Edit, 
   Trash
 } from "lucide-react";
 import { DeletePolicyDialog } from "@/components/clients/DeletePolicyDialog";
@@ -36,6 +35,22 @@ import {
   PaginationNext, 
   PaginationPrevious 
 } from "@/components/ui/pagination";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { 
+  formatCurrency, 
+  formatPercentage, 
+  calculateTotalExpectedCommission, 
+  calculatePremiumToValueRatio,
+  calculatePolicyAge,
+  calculateCommissionMaturityDate,
+  calculateNextRenewalDate,
+  formatReadableDate
+} from "./PolicyUtils";
 
 // Define a type for the column to be sorted
 type SortColumn = 
@@ -43,19 +58,28 @@ type SortColumn =
   | "policy_type" 
   | "provider" 
   | "premium" 
+  | "value"
   | "first_year_commission" 
+  | "annual_ongoing_commission"
+  | "total_expected_commission"
+  | "premium_to_value_ratio"
+  | "policy_age"
   | "start_date" 
   | "status";
 
 interface PoliciesTableProps {
   policies: Policy[];
+  sortBy?: string;
+  sortDirection?: "asc" | "desc";
+  onSort?: (column: SortColumn) => void;
 }
 
-export default function PoliciesTable({ policies }: PoliciesTableProps) {
-  // State for sorting
-  const [sortColumn, setSortColumn] = useState<SortColumn>("policy_name");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-  
+export default function PoliciesTable({ 
+  policies,
+  sortBy = "policy_name",
+  sortDirection = "asc",
+  onSort
+}: PoliciesTableProps) {
   // State for pagination
   const [currentPage, setCurrentPage] = useState(1);
   const policiesPerPage = 10;
@@ -66,49 +90,16 @@ export default function PoliciesTable({ policies }: PoliciesTableProps) {
 
   // Handle sorting
   const handleSort = (column: SortColumn) => {
-    if (sortColumn === column) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      setSortColumn(column);
-      setSortDirection("asc");
+    if (onSort) {
+      onSort(column);
     }
   };
-  
-  // Sort policies
-  const sortedPolicies = [...policies].sort((a, b) => {
-    // Handle null values
-    if (a[sortColumn] === null) return sortDirection === "asc" ? -1 : 1;
-    if (b[sortColumn] === null) return sortDirection === "asc" ? 1 : -1;
-    
-    // Handle string comparison
-    if (typeof a[sortColumn] === "string" && typeof b[sortColumn] === "string") {
-      return sortDirection === "asc" 
-        ? (a[sortColumn] as string).localeCompare(b[sortColumn] as string)
-        : (b[sortColumn] as string).localeCompare(a[sortColumn] as string);
-    }
-    
-    // Handle number comparison
-    if (typeof a[sortColumn] === "number" && typeof b[sortColumn] === "number") {
-      return sortDirection === "asc" 
-        ? (a[sortColumn] as number) - (b[sortColumn] as number)
-        : (b[sortColumn] as number) - (a[sortColumn] as number);
-    }
-    
-    // Handle date comparison
-    if (sortColumn === "start_date") {
-      const dateA = a.start_date ? new Date(a.start_date).getTime() : 0;
-      const dateB = b.start_date ? new Date(b.start_date).getTime() : 0;
-      return sortDirection === "asc" ? dateA - dateB : dateB - dateA;
-    }
-    
-    return 0;
-  });
   
   // Get paginated policies
   const indexOfLastPolicy = currentPage * policiesPerPage;
   const indexOfFirstPolicy = indexOfLastPolicy - policiesPerPage;
-  const currentPolicies = sortedPolicies.slice(indexOfFirstPolicy, indexOfLastPolicy);
-  const totalPages = Math.ceil(sortedPolicies.length / policiesPerPage);
+  const currentPolicies = policies.slice(indexOfFirstPolicy, indexOfLastPolicy);
+  const totalPages = Math.ceil(policies.length / policiesPerPage);
   
   // Get payment structure label
   const getPaymentStructureLabel = (type: Policy["payment_structure_type"]) => {
@@ -146,8 +137,8 @@ export default function PoliciesTable({ policies }: PoliciesTableProps) {
   };
   
   // Sort indicator component
-  const SortIndicator = ({ column }: { column: SortColumn }) => {
-    if (sortColumn !== column) return null;
+  const SortIndicator = ({ column }: { column: string }) => {
+    if (sortBy !== column) return null;
     
     return sortDirection === "asc" ? (
       <ArrowUp className="ml-1 h-4 w-4" />
@@ -199,16 +190,67 @@ export default function PoliciesTable({ policies }: PoliciesTableProps) {
                 </div>
               </TableHead>
               <TableHead 
+                onClick={() => handleSort("value")}
+                className="cursor-pointer hover:bg-muted/50 text-right"
+              >
+                <div className="flex items-center justify-end">
+                  Value
+                  <SortIndicator column="value" />
+                </div>
+              </TableHead>
+              <TableHead 
                 onClick={() => handleSort("first_year_commission")}
                 className="cursor-pointer hover:bg-muted/50 text-right"
               >
                 <div className="flex items-center justify-end">
-                  First Year Commission
+                  First Year Comm.
                   <SortIndicator column="first_year_commission" />
                 </div>
               </TableHead>
-              <TableHead>Payment Structure</TableHead>
-              <TableHead>Duration</TableHead>
+              <TableHead 
+                onClick={() => handleSort("annual_ongoing_commission")}
+                className="cursor-pointer hover:bg-muted/50 text-right"
+              >
+                <div className="flex items-center justify-end">
+                  Annual Ongoing Comm.
+                  <SortIndicator column="annual_ongoing_commission" />
+                </div>
+              </TableHead>
+              <TableHead 
+                onClick={() => handleSort("total_expected_commission")}
+                className="cursor-pointer hover:bg-muted/50 text-right"
+              >
+                <div className="flex items-center justify-end">
+                  Total Expected Comm.
+                  <SortIndicator column="total_expected_commission" />
+                </div>
+              </TableHead>
+              <TableHead className="text-right">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center justify-end cursor-pointer hover:bg-muted/50"
+                           onClick={() => handleSort("premium_to_value_ratio")}>
+                        Premium/Value Ratio
+                        <SortIndicator column="premium_to_value_ratio" />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Premium as a percentage of policy value</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </TableHead>
+              <TableHead className="text-right">Payment Structure</TableHead>
+              <TableHead 
+                onClick={() => handleSort("policy_age")}
+                className="cursor-pointer hover:bg-muted/50 text-right"
+              >
+                <div className="flex items-center justify-end">
+                  Policy Age
+                  <SortIndicator column="policy_age" />
+                </div>
+              </TableHead>
               <TableHead 
                 onClick={() => handleSort("start_date")}
                 className="cursor-pointer hover:bg-muted/50"
@@ -218,6 +260,8 @@ export default function PoliciesTable({ policies }: PoliciesTableProps) {
                   <SortIndicator column="start_date" />
                 </div>
               </TableHead>
+              <TableHead>Next Renewal</TableHead>
+              <TableHead>Commission Maturity</TableHead>
               <TableHead 
                 onClick={() => handleSort("status")}
                 className="cursor-pointer hover:bg-muted/50"
@@ -232,64 +276,88 @@ export default function PoliciesTable({ policies }: PoliciesTableProps) {
           </TableHeader>
           <TableBody>
             {currentPolicies.length > 0 ? (
-              currentPolicies.map((policy) => (
-                <TableRow key={policy.id}>
-                  <TableCell>{policy.policy_name}</TableCell>
-                  <TableCell>{policy.policy_type}</TableCell>
-                  <TableCell>{policy.provider || "N/A"}</TableCell>
-                  <TableCell className="text-right">
-                    {policy.premium ? `$${policy.premium.toLocaleString()}` : "N/A"}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {policy.first_year_commission 
-                      ? `$${policy.first_year_commission.toLocaleString()}` 
-                      : "N/A"}
-                  </TableCell>
-                  <TableCell>
-                    {getPaymentStructureLabel(policy.payment_structure_type)}
-                  </TableCell>
-                  <TableCell>
-                    {policy.policy_duration ? `${policy.policy_duration} years` : "N/A"}
-                  </TableCell>
-                  <TableCell>
-                    {policy.start_date 
-                      ? format(new Date(policy.start_date), "MMM d, yyyy")
-                      : "N/A"}
-                  </TableCell>
-                  <TableCell>{getStatusBadge(policy.status)}</TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <span className="sr-only">Open menu</span>
-                          <ChevronDown className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                          <Link to={`/clients/${policy.client_id}`} className="flex items-center">
-                            <ExternalLink className="mr-2 h-4 w-4" />
-                            View Client
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setPolicyToDelete(policy);
-                            setDeleteDialogOpen(true);
-                          }}
-                          className="text-destructive"
-                        >
-                          <Trash className="mr-2 h-4 w-4" />
-                          Delete Policy
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
+              currentPolicies.map((policy) => {
+                const totalExpectedCommission = calculateTotalExpectedCommission(policy);
+                const premiumToValueRatio = calculatePremiumToValueRatio(policy);
+                const policyAge = calculatePolicyAge(policy);
+                const commissionMaturityDate = calculateCommissionMaturityDate(policy);
+                const nextRenewalDate = calculateNextRenewalDate(policy);
+                
+                return (
+                  <TableRow key={policy.id}>
+                    <TableCell>{policy.policy_name}</TableCell>
+                    <TableCell>{policy.policy_type}</TableCell>
+                    <TableCell>{policy.provider || "N/A"}</TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(policy.premium)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(policy.value)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(policy.first_year_commission)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(policy.annual_ongoing_commission)}
+                    </TableCell>
+                    <TableCell className="text-right font-semibold">
+                      {formatCurrency(totalExpectedCommission)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {premiumToValueRatio !== null ? formatPercentage(premiumToValueRatio.toFixed(2)) : "—"}
+                    </TableCell>
+                    <TableCell>
+                      {getPaymentStructureLabel(policy.payment_structure_type)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {policyAge !== null ? `${policyAge} years` : "—"}
+                    </TableCell>
+                    <TableCell>
+                      {policy.start_date 
+                        ? format(new Date(policy.start_date), "MMM d, yyyy")
+                        : "N/A"}
+                    </TableCell>
+                    <TableCell>
+                      {formatReadableDate(nextRenewalDate)}
+                    </TableCell>
+                    <TableCell>
+                      {formatReadableDate(commissionMaturityDate)}
+                    </TableCell>
+                    <TableCell>{getStatusBadge(policy.status)}</TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <span className="sr-only">Open menu</span>
+                            <ChevronDown className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem asChild>
+                            <Link to={`/clients/${policy.client_id}`} className="flex items-center">
+                              <ExternalLink className="mr-2 h-4 w-4" />
+                              View Client
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setPolicyToDelete(policy);
+                              setDeleteDialogOpen(true);
+                            }}
+                            className="text-destructive"
+                          >
+                            <Trash className="mr-2 h-4 w-4" />
+                            Delete Policy
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             ) : (
               <TableRow>
-                <TableCell colSpan={10} className="h-24 text-center">
+                <TableCell colSpan={16} className="h-24 text-center">
                   No policies found.
                 </TableCell>
               </TableRow>
