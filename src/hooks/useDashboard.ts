@@ -1,509 +1,276 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
 export function useDashboard() {
-  // Get current date for calculations
-  const currentDate = new Date();
-  const currentYear = currentDate.getFullYear();
-  const currentMonth = currentDate.getMonth();
-  const currentDay = currentDate.getDate();
+  const { user } = useAuth();
 
-  // Fetch total commission with proper calculation logic
-  const { data: totalCommission, isLoading: isLoadingCommission } = useQuery({
-    queryKey: ["totalCommission"],
+  return useQuery({
+    queryKey: ['dashboard'],
     queryFn: async () => {
-      // Get all policies
-      const { data: policies, error } = await supabase
-        .from("policies")
-        .select("first_year_commission, annual_ongoing_commission, start_date, status, policy_duration");
+      // This would typically be a real API call to fetch dashboard data
+      // For now, let's use mock data but structure as if from Supabase
       
-      if (error) throw error;
-      
-      let total = 0;
-      
-      policies.forEach(policy => {
-        // Skip policies that aren't active
-        if (policy.status !== "active" || !policy.start_date) {
-          return;
-        }
+      // Fetch total clients count
+      const { count: totalClients, error: clientsError } = await supabase
+        .from('clients')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user?.id);
         
-        const startDate = new Date(policy.start_date);
-        const policyYears = calculateYearsSince(startDate, currentDate);
+      if (clientsError) {
+        console.error('Error fetching clients:', clientsError);
+      }
+
+      // Fetch active clients (those with active policies)
+      const { data: activeClientIds, error: activeError } = await supabase
+        .from('policies')
+        .select('client_id')
+        .eq('user_id', user?.id)
+        .eq('status', 'active')
+        .is('client_id', 'not.null');
         
-        // Add first year commission for completed first year
-        if (policyYears >= 1 && policy.first_year_commission) {
-          total += policy.first_year_commission;
-        }
+      if (activeError) {
+        console.error('Error fetching active clients:', activeError);
+      }
+
+      // Get unique active client IDs
+      const uniqueActiveClientIds = activeClientIds 
+        ? [...new Set(activeClientIds.map(item => item.client_id))]
+        : [];
+      const activeClients = uniqueActiveClientIds.length;
+
+      // Fetch active policies count
+      const { count: activePolicies, error: policiesError } = await supabase
+        .from('policies')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user?.id)
+        .eq('status', 'active');
         
-        // Add annual ongoing commission for years past the first year
-        if (policy.annual_ongoing_commission && policyYears > 1) {
-          // Calculate how many years of ongoing commission we should count
-          // This should be the minimum of:
-          // 1. Maximum 5 years (regulatory limit)
-          // 2. Policy duration minus 1 (first year uses first_year_commission)
-          // 3. Actual years that have passed minus 1 (first year)
-          
-          const maxOngoingYears = 5; // Maximum allowed by regulation
-          const policyRemainingYears = policy.policy_duration ? policy.policy_duration - 1 : Infinity;
-          const actualOngoingYears = policyYears - 1; // Exclude the first year
-          
-          // Take the minimum of these three constraints
-          const ongoingYearsToCount = Math.min(
-            maxOngoingYears, 
-            policyRemainingYears, 
-            actualOngoingYears
-          );
-          
-          total += policy.annual_ongoing_commission * ongoingYearsToCount;
-        }
-      });
-      
-      return total;
-    },
-  });
+      if (policiesError) {
+        console.error('Error fetching policies:', policiesError);
+      }
 
-  // Helper function to calculate years between two dates
-  function calculateYearsSince(startDate, currentDate) {
-    const yearDiff = currentDate.getFullYear() - startDate.getFullYear();
-    
-    // If we haven't reached the anniversary date yet this year, subtract 1
-    if (
-      currentDate.getMonth() < startDate.getMonth() || 
-      (currentDate.getMonth() === startDate.getMonth() && 
-       currentDate.getDate() < startDate.getDate())
-    ) {
-      return Math.max(0, yearDiff - 1);
-    }
-    
-    return yearDiff;
-  }
-
-  // Fetch active clients count
-  const { data: activeClients, isLoading: isLoadingClients } = useQuery({
-    queryKey: ["activeClients"],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("clients")
-        .select("*", { count: 'exact' });
-      
-      if (error) throw error;
-      return count || 0;
-    },
-  });
-
-  // Fetch active policies count
-  const { data: activePolicies, isLoading: isLoadingPolicies } = useQuery({
-    queryKey: ["activePolicies"],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("policies")
-        .select("*", { count: 'exact' })
-        .eq("status", "active");
-      
-      if (error) throw error;
-      return count || 0;
-    },
-  });
-
-  // Fetch pending tasks count
-  const { data: pendingTasks, isLoading: isLoadingTasks } = useQuery({
-    queryKey: ["pendingTasks"],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("tasks")
-        .select("*", { count: 'exact' })
-        .eq("status", "pending");
-      
-      if (error) throw error;
-      return count || 0;
-    },
-  });
-
-  // Fetch annual commission data grouped by year with corrected calculation
-  const { data: annualCommission, isLoading: isLoadingAnnual } = useQuery({
-    queryKey: ["annualCommission"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("policies")
-        .select("start_date, first_year_commission, annual_ongoing_commission, policy_duration, status");
-      
-      if (error) throw error;
-
-      // Group by year and sum commissions with corrected logic
-      const annualData = {};
-      
-      data.forEach(policy => {
-        // Skip policies that aren't active or don't have a start date
-        if (policy.status !== "active" || !policy.start_date) {
-          return;
-        }
+      // Fetch pending tasks count
+      const { count: pendingTasks, error: tasksError } = await supabase
+        .from('tasks')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user?.id)
+        .eq('status', 'pending');
         
-        const startDate = new Date(policy.start_date);
-        const startYear = startDate.getFullYear();
+      if (tasksError) {
+        console.error('Error fetching tasks:', tasksError);
+      }
+
+      // Calculate annual commission (month by month for current year)
+      const currentYear = new Date().getFullYear();
+      const startOfYear = new Date(currentYear, 0, 1).toISOString();
+      const endOfYear = new Date(currentYear, 11, 31).toISOString();
+      
+      const { data: commissionData, error: commissionError } = await supabase
+        .from('policies')
+        .select('start_date, first_year_commission, annual_ongoing_commission')
+        .eq('user_id', user?.id)
+        .gte('start_date', startOfYear)
+        .lte('start_date', endOfYear);
         
-        // Process first year commission
-        if (policy.first_year_commission && startYear < currentYear) {
-          // Only count if the first year has been completed
-          if (!annualData[startYear]) {
-            annualData[startYear] = 0;
+      if (commissionError) {
+        console.error('Error fetching commission data:', commissionError);
+      }
+
+      const annualCommission = Array.from({ length: 12 }, (_, i) => {
+        const month = i + 1;
+        const total = commissionData?.reduce((acc, policy) => {
+          const policyDate = new Date(policy.start_date);
+          if (policyDate.getMonth() + 1 === month) {
+            return acc + (policy.first_year_commission || 0);
           }
-          annualData[startYear] += policy.first_year_commission;
-        }
+          return acc + (policy.annual_ongoing_commission || 0) / 12;
+        }, 0) || 0;
         
-        // Process annual ongoing commission for completed years
-        if (policy.annual_ongoing_commission) {
-          const maxOngoingYears = 5; // Maximum allowed by regulation
-          const policyRemainingYears = policy.policy_duration ? policy.policy_duration - 1 : Infinity;
-          
-          // Calculate how many years of ongoing commission we should count
-          for (let yearOffset = 1; yearOffset <= Math.min(maxOngoingYears, policyRemainingYears); yearOffset++) {
-            const yearToCheck = startYear + yearOffset;
-            
-            // Only count completed years
-            if (yearToCheck < currentYear) {
-              if (!annualData[yearToCheck]) {
-                annualData[yearToCheck] = 0;
-              }
-              annualData[yearToCheck] += policy.annual_ongoing_commission;
-            }
-          }
-        }
+        return { 
+          year: `${currentYear}-${month.toString().padStart(2, '0')}`,
+          amount: total 
+        };
       });
 
-      // Convert to array format for chart
-      return Object.entries(annualData).map(([year, amount]) => ({
-        year,
-        amount,
-      })).sort((a, b) => parseInt(a.year) - parseInt(b.year)); // Sort by year ascending
-    },
-  });
-
-  // NEW: Fetch pending commissions (upcoming FYC / Renewals)
-  const { data: pendingCommissions, isLoading: isLoadingPendingCommissions } = useQuery({
-    queryKey: ["pendingCommissions"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("policies")
-        .select("start_date, first_year_commission, annual_ongoing_commission, policy_duration, status");
-      
-      if (error) throw error;
-      
-      let pendingAmount = 0;
-      
-      data.forEach(policy => {
-        // Only consider active policies
-        if (policy.status !== "active" || !policy.start_date) {
-          return;
-        }
+      // Fetch pipeline data
+      const { data: pipelineData, error: pipelineError } = await supabase
+        .from('clients')
+        .select('pipeline_stage')
+        .eq('user_id', user?.id);
         
-        const startDate = new Date(policy.start_date);
-        const policyYears = calculateYearsSince(startDate, currentDate);
-        const yearFraction = calculateYearFraction(startDate, currentDate);
-        
-        // First year commission that's pending (for policies in their first year)
-        if (policyYears === 0 && policy.first_year_commission) {
-          pendingAmount += policy.first_year_commission;
-        }
-        
-        // Ongoing commission that will be paid this year but hasn't been paid yet
-        // Check if we're in a renewal year but haven't hit the renewal date yet
-        if (policy.annual_ongoing_commission && policyYears >= 1) {
-          const renewalMonth = startDate.getMonth();
-          const renewalDay = startDate.getDate();
-          
-          // If current date is before the renewal date this year, count it as pending
-          if (
-            (currentMonth < renewalMonth) || 
-            (currentMonth === renewalMonth && currentDay < renewalDay)
-          ) {
-            // Check if we haven't exceeded the policy duration or the max years
-            const maxOngoingYears = 5;
-            const policyRemainingYears = policy.policy_duration ? policy.policy_duration - 1 : Infinity;
-            
-            if (policyYears <= Math.min(maxOngoingYears, policyRemainingYears)) {
-              pendingAmount += policy.annual_ongoing_commission;
-            }
-          }
-        }
-      });
-      
-      return pendingAmount;
-    },
-  });
+      if (pipelineError) {
+        console.error('Error fetching pipeline data:', pipelineError);
+      }
 
-  // Helper function to calculate partial year fraction
-  function calculateYearFraction(startDate, currentDate) {
-    const totalDays = 365;
-    const startTime = startDate.getTime();
-    const currentTime = currentDate.getTime();
-    const diffDays = Math.floor((currentTime - startTime) / (1000 * 60 * 60 * 24));
-    return (diffDays % totalDays) / totalDays;
-  }
+      // Count clients in each pipeline stage
+      const pipeline = pipelineData?.reduce((acc, client) => {
+        const stage = client.pipeline_stage;
+        acc[stage] = (acc[stage] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>) || {};
 
-  // NEW: Fetch projected income for next 12 months
-  const { data: projectedIncome, isLoading: isLoadingProjectedIncome } = useQuery({
-    queryKey: ["projectedIncome"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("policies")
-        .select("start_date, first_year_commission, annual_ongoing_commission, policy_duration, status");
-      
-      if (error) throw error;
-      
-      let projectedTotal = 0;
-      const projectionDate = new Date();
-      projectionDate.setFullYear(projectionDate.getFullYear() + 1); // 12 months from now
-      
-      data.forEach(policy => {
-        // Only consider active policies
-        if (policy.status !== "active" || !policy.start_date) {
-          return;
-        }
-        
-        const startDate = new Date(policy.start_date);
-        
-        // Current policy year
-        const currentPolicyYears = calculateYearsSince(startDate, currentDate);
-        
-        // What policy year will we be in at the projection date
-        const projectedPolicyYears = calculateYearsSince(startDate, projectionDate);
-        
-        // If we will cross a policy anniversary within the next 12 months
-        if (projectedPolicyYears > currentPolicyYears) {
-          // Check if we're currently in year 0 (will get first year commission)
-          if (currentPolicyYears === 0 && policy.first_year_commission) {
-            projectedTotal += policy.first_year_commission;
-          }
-          // Otherwise we'll get ongoing commission
-          else if (policy.annual_ongoing_commission) {
-            const nextPolicyYear = currentPolicyYears + 1;
-            const maxOngoingYears = 5;
-            const policyRemainingYears = policy.policy_duration ? policy.policy_duration - 1 : Infinity;
-            
-            // Only count if we haven't exceeded the policy duration or max years
-            if (nextPolicyYear <= Math.min(maxOngoingYears, policyRemainingYears)) {
-              projectedTotal += policy.annual_ongoing_commission;
-            }
-          }
-        }
-      });
-      
-      return projectedTotal;
-    },
-  });
+      // Ensure all stages are represented
+      const allStages = ['Lead', 'Contacted', 'Proposal Sent', 'Negotiation', 'Closed Won', 'Closed Lost'];
+      const formattedPipeline = allStages.reduce((acc, stage) => {
+        acc[stage] = pipeline[stage] || 0;
+        return acc;
+      }, {} as Record<string, number>);
 
-  // NEW: Fetch year to date commission
-  const { data: yearToDateCommission, isLoading: isLoadingYtdCommission } = useQuery({
-    queryKey: ["yearToDateCommission"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("policies")
-        .select("start_date, first_year_commission, annual_ongoing_commission, policy_duration, status");
-      
-      if (error) throw error;
-      
-      let ytdTotal = 0;
-      const startOfYear = new Date(currentYear, 0, 1);
-      
-      data.forEach(policy => {
-        // Only consider active policies
-        if (policy.status !== "active" || !policy.start_date) {
-          return;
-        }
-        
-        const startDate = new Date(policy.start_date);
-        
-        // If the policy started this year, add first year commission
-        if (
-          startDate.getFullYear() === currentYear && 
-          policy.first_year_commission
-        ) {
-          ytdTotal += policy.first_year_commission;
-        }
-        
-        // Check for ongoing commissions that were paid this year
-        if (policy.annual_ongoing_commission) {
-          const policyYears = calculateYearsSince(startDate, currentDate);
-          
-          // Skip first year (that's handled by first_year_commission)
-          if (policyYears >= 1) {
-            const renewalDate = new Date(startDate);
-            renewalDate.setFullYear(currentYear);
-            
-            // If renewal date has passed this year, add the ongoing commission
-            if (renewalDate <= currentDate && renewalDate >= startOfYear) {
-              const maxOngoingYears = 5;
-              const policyRemainingYears = policy.policy_duration ? policy.policy_duration - 1 : Infinity;
-              const currentOngoingYear = policyYears; // This is the "ongoing year" (1-based)
-              
-              // Only count if we haven't exceeded the policy duration or max years
-              if (currentOngoingYear <= Math.min(maxOngoingYears, policyRemainingYears)) {
-                ytdTotal += policy.annual_ongoing_commission;
-              }
-            }
-          }
-        }
-      });
-      
-      return ytdTotal;
-    },
-  });
-
-  // NEW: Fetch upcoming renewals
-  const { data: upcomingRenewals, isLoading: isLoadingRenewals } = useQuery({
-    queryKey: ["upcomingRenewals"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("policies")
-        .select("start_date, end_date, status");
-      
-      if (error) throw error;
-      
-      // Look 30 days into the future
-      const futureDate = new Date();
-      futureDate.setDate(futureDate.getDate() + 30);
-      
-      // Count policies with end dates in the next 30 days
-      return data.filter(policy => {
-        if (policy.status !== "active" || !policy.end_date) {
-          return false;
-        }
-        
-        const endDate = new Date(policy.end_date);
-        return endDate >= currentDate && endDate <= futureDate;
-      }).length;
-    },
-  });
-
-  // Fetch deal pipeline data
-  const { data: pipelineData, isLoading: isLoadingPipeline } = useQuery({
-    queryKey: ["pipelineData"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("clients")
-        .select("pipeline_stage");
-      
-      if (error) throw error;
-
-      const stages = {
-        'Lead': 0,
-        'Contacted': 0,
-        'Proposal Sent': 0,
-        'Negotiation': 0,
-        'Closed Won': 0,
-        'Closed Lost': 0,
-      };
-
-      data.forEach(client => {
-        if (client.pipeline_stage in stages) {
-          stages[client.pipeline_stage]++;
-        }
-      });
-
-      return stages;
-    },
-  });
-
-  // NEW: Fetch commission goal (default to $10,000 if not set)
-  const { data: commissionGoal, isLoading: isLoadingCommissionGoal } = useQuery({
-    queryKey: ["commissionGoal"],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return 10000; // Default fallback
-
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('commission_goal')
-        .eq('id', user.id)
-        .single();
-
-      if (error || !profile) return 10000; // Fallback to default if not found
-      return profile.commission_goal || 10000;
-    },
-  });
-
-  // Fetch upcoming tasks
-  const { data: upcomingTasks, isLoading: isLoadingUpcoming } = useQuery({
-    queryKey: ["upcomingTasks"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tasks")
-        .select(`
-          *,
-          clients (name)
-        `)
-        .eq("status", "pending")
-        .order("due_date", { ascending: true })
+      // Fetch tasks with due dates
+      const { data: upcomingTasks, error: upcomingError } = await supabase
+        .from('tasks')
+        .select('*, clients(name)')
+        .eq('user_id', user?.id)
+        .order('due_date', { ascending: true })
         .limit(5);
-      
-      if (error) throw error;
-      return data;
-    },
-  });
+        
+      if (upcomingError) {
+        console.error('Error fetching upcoming tasks:', upcomingError);
+      }
 
-  // Fetch recent clients
-  const { data: recentClients, isLoading: isLoadingRecentClients } = useQuery({
-    queryKey: ["recentClients"],
-    queryFn: async () => {
-      const { data: clients, error: clientsError } = await supabase
-        .from("clients")
-        .select("id, name")
-        .order("created_at", { ascending: false })
+      // Fetch recent clients with their policy counts
+      const { data: recentClientsRaw, error: recentError } = await supabase
+        .from('clients')
+        .select('id, name, created_at')
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false })
         .limit(5);
+        
+      if (recentError) {
+        console.error('Error fetching recent clients:', recentError);
+      }
 
-      if (clientsError) throw clientsError;
-
-      // For each client, fetch their policies
-      const clientsWithPolicies = await Promise.all(
-        clients.map(async (client) => {
-          const { data: policies, error: policiesError } = await supabase
-            .from("policies")
-            .select("value")
-            .eq("client_id", client.id);
-
-          if (policiesError) throw policiesError;
-
+      // Get policy counts and values for each client
+      const recentClients = await Promise.all(
+        (recentClientsRaw || []).map(async (client) => {
+          const { data: policies, error: policyError } = await supabase
+            .from('policies')
+            .select('value')
+            .eq('client_id', client.id);
+            
+          if (policyError) {
+            console.error(`Error fetching policies for client ${client.id}:`, policyError);
+          }
+          
+          const policyCount = policies?.length || 0;
+          const totalValue = policies?.reduce((sum, policy) => sum + (policy.value || 0), 0) || 0;
+          
           return {
             ...client,
-            policies: policies.length,
-            value: policies.reduce((sum, policy) => sum + (policy.value || 0), 0),
+            policies: policyCount,
+            value: totalValue
           };
         })
       );
 
-      return clientsWithPolicies;
+      // Calculate pending commissions (sum of first_year_commission for policies in 'pending' status)
+      const { data: pendingCommissionsData, error: pendingCommError } = await supabase
+        .from('policies')
+        .select('first_year_commission')
+        .eq('user_id', user?.id)
+        .eq('status', 'pending');
+        
+      if (pendingCommError) {
+        console.error('Error fetching pending commissions:', pendingCommError);
+      }
+
+      const pendingCommissions = pendingCommissionsData?.reduce(
+        (sum, policy) => sum + (policy.first_year_commission || 0), 
+        0
+      ) || 0;
+
+      // Calculate projected income for next 12 months
+      const { data: projectedData, error: projectedError } = await supabase
+        .from('policies')
+        .select('first_year_commission, annual_ongoing_commission, start_date, status')
+        .eq('user_id', user?.id)
+        .in('status', ['active', 'pending']);
+        
+      if (projectedError) {
+        console.error('Error fetching projected income data:', projectedError);
+      }
+
+      const today = new Date();
+      const oneYearFromNow = new Date();
+      oneYearFromNow.setFullYear(today.getFullYear() + 1);
+
+      const projectedIncome = projectedData?.reduce((sum, policy) => {
+        const startDate = policy.start_date ? new Date(policy.start_date) : null;
+        if (!startDate) return sum;
+
+        if (startDate > today && startDate < oneYearFromNow) {
+          // New policy starting in the next 12 months
+          return sum + (policy.first_year_commission || 0);
+        } else {
+          // Existing policy - count ongoing commission
+          return sum + (policy.annual_ongoing_commission || 0);
+        }
+      }, 0) || 0;
+
+      // Calculate year to date commission
+      const startOfCurrentYear = new Date(today.getFullYear(), 0, 1);
+      const { data: ytdData, error: ytdError } = await supabase
+        .from('policies')
+        .select('first_year_commission, start_date')
+        .eq('user_id', user?.id)
+        .gte('start_date', startOfCurrentYear.toISOString())
+        .lte('start_date', today.toISOString());
+        
+      if (ytdError) {
+        console.error('Error fetching YTD commission data:', ytdError);
+      }
+
+      const yearToDateCommission = ytdData?.reduce(
+        (sum, policy) => sum + (policy.first_year_commission || 0), 
+        0
+      ) || 0;
+
+      // Calculate upcoming renewals (policies ending in next 90 days)
+      const ninetyDaysFromNow = new Date();
+      ninetyDaysFromNow.setDate(today.getDate() + 90);
+
+      const { count: upcomingRenewals, error: renewalsError } = await supabase
+        .from('policies')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user?.id)
+        .gte('end_date', today.toISOString())
+        .lte('end_date', ninetyDaysFromNow.toISOString());
+        
+      if (renewalsError) {
+        console.error('Error fetching upcoming renewals:', renewalsError);
+      }
+
+      // Get user's commission goal
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('commission_goal')
+        .eq('id', user?.id)
+        .single();
+        
+      if (profileError) {
+        console.error('Error fetching commission goal:', profileError);
+      }
+
+      const commissionGoal = profileData?.commission_goal || 10000;
+
+      return {
+        totalClients: totalClients || 0,
+        activeClients: activeClients || 0,
+        activePolicies: activePolicies || 0,
+        pendingTasks: pendingTasks || 0,
+        annualCommission,
+        pipelineData: formattedPipeline,
+        upcomingTasks: upcomingTasks || [],
+        recentClients: recentClients || [],
+        pendingCommissions,
+        projectedIncome,
+        yearToDateCommission,
+        upcomingRenewals: upcomingRenewals || 0,
+        commissionGoal,
+        isLoading: false
+      };
     },
+    enabled: !!user,
   });
-
-  const isLoading = 
-    isLoadingCommission || 
-    isLoadingClients || 
-    isLoadingPolicies || 
-    isLoadingTasks || 
-    isLoadingAnnual || 
-    isLoadingPipeline || 
-    isLoadingUpcoming || 
-    isLoadingRecentClients ||
-    isLoadingPendingCommissions ||
-    isLoadingProjectedIncome ||
-    isLoadingYtdCommission ||
-    isLoadingRenewals ||
-    isLoadingCommissionGoal;
-
-  return {
-    totalCommission,
-    activeClients,
-    activePolicies,
-    pendingTasks,
-    annualCommission,
-    pipelineData,
-    upcomingTasks,
-    recentClients,
-    pendingCommissions,
-    projectedIncome,
-    yearToDateCommission,
-    upcomingRenewals,
-    commissionGoal,
-    isLoading,
-  };
 }

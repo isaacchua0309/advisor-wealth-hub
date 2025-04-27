@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useTasks, Task } from "@/hooks/useTasks";
@@ -11,10 +11,11 @@ import { TaskKPICards } from "@/components/tasks/TaskKPICards";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Tasks() {
-  const { tasks, isLoading, createTask, updateTask } = useTasks();
+  const { tasks, isLoading, createTask, updateTask, deleteTask } = useTasks();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
+  const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   const [filters, setFilters] = useState({
     status: 'all',
     priority: 'all',
@@ -24,12 +25,63 @@ export default function Tasks() {
     search: ''
   });
 
-  const handleCreateTask = (task: Omit<Task, 'id' | 'user_id'>) => {
+  // Check for overdue tasks on load and when tasks change
+  useEffect(() => {
+    if (tasks && tasks.length > 0) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      tasks.forEach(task => {
+        if (task.due_date && 
+            new Date(task.due_date) < today && 
+            task.status === 'pending') {
+          // Update status to overdue
+          updateTask.mutate({ 
+            id: task.id!, 
+            status: 'overdue' 
+          }, {
+            // Silent update - no toast notification
+            onSuccess: () => {}
+          });
+        }
+      });
+    }
+  }, [tasks, updateTask]);
+
+  const handleCreateTask = (task: Omit<Task, 'id' | 'user_id' | 'created_at'>) => {
     createTask.mutate({
       ...task,
-      user_id: '' // will be set by backend
+      user_id: '', // will be set by backend
+      created_at: new Date().toISOString()
     });
     setIsDialogOpen(false);
+  };
+
+  const handleEditTask = (task: Task) => {
+    setTaskToEdit(task);
+    setIsDialogOpen(true);
+  };
+
+  const handleUpdateTask = (task: Omit<Task, 'id' | 'user_id' | 'created_at'>) => {
+    if (taskToEdit?.id) {
+      updateTask.mutate({
+        id: taskToEdit.id,
+        ...task
+      });
+      setTaskToEdit(null);
+      setIsDialogOpen(false);
+    }
+  };
+
+  const handleDeleteTask = (taskId: string) => {
+    deleteTask.mutate(taskId, {
+      onSuccess: () => {
+        // Remove from selected tasks if it was selected
+        if (selectedTasks.includes(taskId)) {
+          setSelectedTasks(prev => prev.filter(id => id !== taskId));
+        }
+      }
+    });
   };
 
   const handleFilterChange = (key: string, value: any) => {
@@ -65,6 +117,13 @@ export default function Tasks() {
     setSelectedTasks([]);
   };
 
+  const handleDialogOpenChange = (open: boolean) => {
+    setIsDialogOpen(open);
+    if (!open) {
+      setTaskToEdit(null);
+    }
+  };
+
   // Filter tasks based on selected filters and search
   const filteredTasks = tasks?.filter(task => {
     return (
@@ -82,19 +141,22 @@ export default function Tasks() {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-bold tracking-tight">Tasks & Follow-ups</h2>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
           <DialogTrigger asChild>
             <Button variant="default">
               <PlusIcon className="mr-2 h-4 w-4" /> Create Task
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>Create New Task</DialogTitle>
+              <DialogTitle>
+                {taskToEdit ? 'Edit Task' : 'Create New Task'}
+              </DialogTitle>
             </DialogHeader>
             <TaskForm 
-              onSubmit={handleCreateTask} 
-              isSubmitting={createTask.isPending}
+              onSubmit={taskToEdit ? handleUpdateTask : handleCreateTask} 
+              isSubmitting={taskToEdit ? updateTask.isPending : createTask.isPending}
+              initialTask={taskToEdit || undefined}
             />
           </DialogContent>
         </Dialog>
@@ -133,6 +195,8 @@ export default function Tasks() {
         onStatusChange={handleTaskStatusChange}
         selectedTasks={selectedTasks}
         onSelectTask={handleSelectTask}
+        onEditTask={handleEditTask}
+        onDeleteTask={handleDeleteTask}
       />
     </div>
   );
