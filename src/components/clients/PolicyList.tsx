@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2, PlusCircle } from "lucide-react";
-import EditPolicyDialog from "./EditPolicyDialog"; // Using default import
+import EditPolicyDialog from "./EditPolicyDialog"; // Change to default import
 import { DeletePolicyDialog } from "./DeletePolicyDialog";
 import { AddPolicyDialog } from "./AddPolicyDialog";
 import { useClients } from "@/hooks/useClients";

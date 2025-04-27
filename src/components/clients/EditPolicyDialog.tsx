@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   Dialog,
@@ -66,7 +65,7 @@ interface EditPolicyDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export const EditPolicyDialog = ({ policy, open, onOpenChange }) => {
+export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPolicyDialogProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { updatePolicy, deletePolicy } = useClients();
@@ -142,28 +141,23 @@ export const EditPolicyDialog = ({ policy, open, onOpenChange }) => {
     }
   };
 
-  // Function to handle global policy selection
   const handleGlobalPolicyChange = (globalPolicyId: string) => {
     if (!globalPolicies) return;
     
     if (globalPolicyId) {
       const selectedPolicy = globalPolicies.find(p => p.id === globalPolicyId);
       if (selectedPolicy) {
-        // Update form values with data from global policy
         setValue('global_policy_id', globalPolicyId);
         setValue('policy_name', selectedPolicy.policy_name);
         setValue('policy_type', selectedPolicy.policy_type);
         setValue('provider', selectedPolicy.provider);
         
-        // Set commission rates from global policy
         setValue('commission_rate', selectedPolicy.first_year_commission_rate);
         setValue('ongoing_commission_rate', selectedPolicy.ongoing_commission_rate);
         
-        // Set durations from global policy
         setValue('commission_duration', selectedPolicy.commission_duration);
         setValue('policy_duration', selectedPolicy.policy_duration);
         
-        // Calculate commissions if premium is available
         const premium = watch('premium');
         if (premium && selectedPolicy.first_year_commission_rate) {
           setValue('first_year_commission', premium * selectedPolicy.first_year_commission_rate / 100);
@@ -176,7 +170,6 @@ export const EditPolicyDialog = ({ policy, open, onOpenChange }) => {
     }
   };
 
-  // Effect to calculate commissions when premium or rates change
   React.useEffect(() => {
     const premium = watch('premium');
     const commissionRate = watch('commission_rate');
@@ -206,7 +199,6 @@ export const EditPolicyDialog = ({ policy, open, onOpenChange }) => {
         
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-4 py-4 px-6">
-            {/* Global Policy Selection */}
             <div className="space-y-2">
               <Label htmlFor="global_policy_id">Global Policy Template</Label>
               <Controller
@@ -445,7 +437,6 @@ export const EditPolicyDialog = ({ policy, open, onOpenChange }) => {
               )}
             </div>
             
-            {/* Commission Details Section */}
             <div className="pt-4 border-t">
               <h3 className="text-lg font-medium mb-4">Commission Details</h3>
               <div className="grid grid-cols-2 gap-4">
@@ -580,4 +571,4 @@ export const EditPolicyDialog = ({ policy, open, onOpenChange }) => {
       </DialogContent>
     </Dialog>
   );
-};
+}
