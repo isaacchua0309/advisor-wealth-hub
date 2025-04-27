@@ -408,9 +408,17 @@ export function useDashboard() {
   const { data: commissionGoal, isLoading: isLoadingCommissionGoal } = useQuery({
     queryKey: ["commissionGoal"],
     queryFn: async () => {
-      // In a real app, you'd fetch this from the user's settings
-      // For now, we'll return a default value
-      return 10000; // $10,000 default goal
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return 10000; // Default fallback
+
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('commission_goal')
+        .eq('id', user.id)
+        .single();
+
+      if (error || !profile) return 10000; // Fallback to default if not found
+      return profile.commission_goal || 10000;
     },
   });
 

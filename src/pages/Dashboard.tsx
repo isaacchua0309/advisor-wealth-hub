@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { 
   Card, 
@@ -44,6 +43,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
+import { CommissionGoalProgress } from "@/components/dashboard/CommissionGoalProgress";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -66,7 +66,6 @@ export default function Dashboard() {
 
   const [progressValue, setProgressValue] = useState(0);
 
-  // Calculate the commission goal progress
   useEffect(() => {
     if (yearToDateCommission && commissionGoal && commissionGoal > 0) {
       const progress = Math.min(Math.round((yearToDateCommission / commissionGoal) * 100), 100);
@@ -74,14 +73,12 @@ export default function Dashboard() {
     }
   }, [yearToDateCommission, commissionGoal]);
 
-  // Format pipeline data for chart display
   const pipelineChartData = pipelineData ? 
     Object.entries(pipelineData).map(([stage, count]) => ({
       stage,
       count,
     })) : [];
 
-  // Format colors for pipeline chart
   const PIPELINE_COLORS = {
     'Lead': '#9b87f5',
     'Contacted': '#7E69AB',
@@ -97,7 +94,6 @@ export default function Dashboard() {
 
   const currentYear = new Date().getFullYear();
 
-  // Quick create handlers
   const handleQuickCreate = (type: string) => {
     switch (type) {
       case "client":
@@ -124,7 +120,6 @@ export default function Dashboard() {
           </p>
         </div>
         
-        {/* Quick Create "Speed Dial" */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button className="mt-4 sm:mt-0" size="sm">
@@ -149,83 +144,7 @@ export default function Dashboard() {
         </DropdownMenu>
       </div>
       
-      {/* Key Metrics Section */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <Card className="stats-card">
-          <div className="flex items-center space-x-4">
-            <div className="bg-primary/20 p-3 rounded-full">
-              <Users className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <p className="stats-label">Total Clients</p>
-              <h3 className="stats-value">{activeClients || 0}</h3>
-            </div>
-          </div>
-        </Card>
-        
-        <Card className="stats-card">
-          <div className="flex items-center space-x-4">
-            <div className="bg-crm-accent/20 p-3 rounded-full">
-              <FileText className="h-6 w-6 text-crm-accent" />
-            </div>
-            <div>
-              <p className="stats-label">Active Policies</p>
-              <h3 className="stats-value">{activePolicies || 0}</h3>
-            </div>
-          </div>
-        </Card>
-        
-        <Card className="stats-card">
-          <div className="flex items-center space-x-4">
-            <div className="bg-crm-secondary/20 p-3 rounded-full">
-              <DollarSign className="h-6 w-6 text-crm-secondary" />
-            </div>
-            <div>
-              <p className="stats-label">Pending Commissions</p>
-              <h3 className="stats-value">S${pendingCommissions?.toLocaleString() || '0'}</h3>
-            </div>
-          </div>
-        </Card>
-        
-        <Card className="stats-card">
-          <div className="flex items-center space-x-4">
-            <div className="bg-crm-primary/20 p-3 rounded-full">
-              <DollarSign className="h-6 w-6 text-crm-primary" />
-            </div>
-            <div>
-              <p className="stats-label">Projected Income (12M)</p>
-              <h3 className="stats-value">S${projectedIncome?.toLocaleString() || '0'}</h3>
-            </div>
-          </div>
-        </Card>
-        
-        <Card className="stats-card">
-          <div className="flex items-center space-x-4">
-            <div className="bg-crm-success/20 p-3 rounded-full">
-              <DollarSign className="h-6 w-6 text-crm-success" />
-            </div>
-            <div>
-              <p className="stats-label">YTD Commission</p>
-              <h3 className="stats-value">S${yearToDateCommission?.toLocaleString() || '0'}</h3>
-            </div>
-          </div>
-        </Card>
-        
-        <Card className="stats-card">
-          <div className="flex items-center space-x-4">
-            <div className="bg-crm-warning/20 p-3 rounded-full">
-              <Calendar className="h-6 w-6 text-crm-warning" />
-            </div>
-            <div>
-              <p className="stats-label">Upcoming Renewals</p>
-              <h3 className="stats-value">{upcomingRenewals || 0}</h3>
-            </div>
-          </div>
-        </Card>
-      </div>
-
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Deal Pipeline Chart */}
         <Card>
           <CardHeader>
             <CardTitle>Deal Pipeline</CardTitle>
@@ -267,59 +186,14 @@ export default function Dashboard() {
           </CardContent>
         </Card>
         
-        {/* Commission Goal Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Commission Goal Progress</CardTitle>
-            <CardDescription>Your progress towards {currentYear} target</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center space-y-8">
-            <div className="w-40 h-40 relative flex items-center justify-center">
-              <svg className="w-full h-full" viewBox="0 0 100 100">
-                <circle 
-                  className="text-gray-100" 
-                  strokeWidth="10" 
-                  stroke="currentColor" 
-                  fill="transparent" 
-                  r="40" 
-                  cx="50" 
-                  cy="50" 
-                />
-                <circle 
-                  className="text-primary" 
-                  strokeWidth="10" 
-                  strokeDasharray={`${progressValue * 2.51} 251.2`} 
-                  strokeLinecap="round" 
-                  stroke="currentColor" 
-                  fill="transparent" 
-                  r="40" 
-                  cx="50" 
-                  cy="50" 
-                />
-              </svg>
-              <div className="absolute flex flex-col items-center justify-center">
-                <span className="text-3xl font-bold">{progressValue}%</span>
-                <span className="text-sm text-muted-foreground">of goal</span>
-              </div>
-            </div>
-            
-            <div className="w-full text-center">
-              <p className="mb-2">
-                <span className="text-2xl font-bold">S${yearToDateCommission?.toLocaleString() || '0'}</span>
-                <span className="text-muted-foreground"> / S${commissionGoal?.toLocaleString() || '10,000'}</span>
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {commissionGoal && yearToDateCommission && commissionGoal > yearToDateCommission
-                  ? `S$${(commissionGoal - yearToDateCommission).toLocaleString()} remaining to goal`
-                  : "Goal achieved! 🎉"}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <CommissionGoalProgress 
+          yearToDateCommission={yearToDateCommission}
+          commissionGoal={commissionGoal}
+          currentYear={currentYear}
+        />
       </div>
       
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Notifications Feed */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
@@ -366,7 +240,6 @@ export default function Dashboard() {
           </CardContent>
         </Card>
         
-        {/* Client Leaderboard */}
         <Card>
           <CardHeader>
             <CardTitle>Top Clients by Value</CardTitle>
@@ -416,7 +289,6 @@ export default function Dashboard() {
         </Card>
       </div>
       
-      {/* Recent Activities Section */}
       <Card>
         <CardHeader>
           <CardTitle>Recent Activities</CardTitle>

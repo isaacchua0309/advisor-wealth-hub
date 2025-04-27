@@ -250,18 +250,21 @@ export type Database = {
       }
       profiles: {
         Row: {
+          commission_goal: number | null
           created_at: string
           email: string
           full_name: string
           id: string
         }
         Insert: {
+          commission_goal?: number | null
           created_at?: string
           email: string
           full_name: string
           id: string
         }
         Update: {
+          commission_goal?: number | null
           created_at?: string
           email?: string
           full_name?: string
