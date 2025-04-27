@@ -3,6 +3,7 @@ import React from "react";
 import { Policy } from "@/types/policy";
 import PoliciesTable from "@/components/policies/PoliciesTable";
 import { Loader2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface PolicyListContainerProps {
   isLoadingPolicies: boolean;
@@ -32,14 +33,60 @@ export default function PolicyListContainer({
   if (filteredPolicies && filteredPolicies.length > 0) {
     return (
       <div className="w-full">
-        <div className="overflow-x-auto">
-          <PoliciesTable 
-            policies={filteredPolicies}
-            sortBy={sortBy}
-            sortDirection={sortDirection}
-            onSort={onSort}
-          />
-        </div>
+        <Tabs defaultValue="table" className="w-full">
+          <TabsList className="mb-4">
+            <TabsTrigger value="table">Table View</TabsTrigger>
+            <TabsTrigger value="compact">Compact View</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="table" className="w-full">
+            <div className="responsive-table-container">
+              <PoliciesTable 
+                policies={filteredPolicies}
+                sortBy={sortBy}
+                sortDirection={sortDirection}
+                onSort={onSort}
+              />
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="compact" className="w-full">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredPolicies.map((policy) => (
+                <div 
+                  key={policy.id} 
+                  className="bg-white rounded-lg border p-4 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex justify-between items-start">
+                    <h3 className="font-medium text-sm">{policy.policy_name}</h3>
+                    <div className={`px-2 py-1 rounded-full text-xs ${
+                      policy.status === 'active' ? 'bg-green-100 text-green-800' : 
+                      policy.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {policy.status}
+                    </div>
+                  </div>
+                  
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    {policy.policy_type} • {policy.provider || 'No provider'}
+                  </div>
+                  
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Premium</p>
+                      <p className="text-sm font-medium">${policy.premium?.toLocaleString() || '0'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">First Year</p>
+                      <p className="text-sm font-medium">${policy.first_year_commission?.toLocaleString() || '0'}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     );
   }

@@ -79,22 +79,22 @@ export default function CommissionProjectionChart({
   }, []);
   
   return (
-    <Card className="mb-8">
-      <CardHeader>
-        <CardTitle>Commission Projection</CardTitle>
-        <CardDescription className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <Card className="mb-6">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-xl">Commission Projection</CardTitle>
+        <CardDescription className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4 sm:items-center">
           <div className="font-medium">
-            Next Year's Projected Commission: <span className="text-green-600">{formatCurrency(nextYearCommission)}</span>
+            Next Year: <span className="text-green-600">{formatCurrency(nextYearCommission)}</span>
           </div>
           {maxCommissionYear.year > 0 && (
             <div className="font-medium">
-              Highest Projected Year: <span className="text-green-600">{maxCommissionYear.year}</span> ({formatCurrency(maxCommissionYear.amount)})
+              Highest Year: <span className="text-green-600">{maxCommissionYear.year}</span> ({formatCurrency(maxCommissionYear.amount)})
             </div>
           )}
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="h-[300px] w-full overflow-hidden">
+      <CardContent className="p-0 sm:p-4">
+        <div className="h-[250px] sm:h-[300px] w-full">
           <ChartContainer config={chartConfig}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart 
@@ -107,16 +107,16 @@ export default function CommissionProjectionChart({
                   dataKey="year"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 12 }}
-                  interval={isMobile ? 1 : 0} // Skip labels on mobile
+                  tick={{ fontSize: 10 }}
+                  interval={isMobile ? 1 : 0}
                 />
                 <YAxis 
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={tooltipFormatter}
-                  domain={[0, yAxisMax]} // Fixed domain based on data, not container size
-                  tick={{ fontSize: 12 }}
-                  width={60} // Ensure there's room for currency formatting
+                  domain={[0, yAxisMax]}
+                  tick={{ fontSize: 10 }}
+                  width={60}
                 />
                 <Tooltip content={<ChartTooltipContent formatter={tooltipFormatter} />} />
                 <Legend />
@@ -126,13 +126,10 @@ export default function CommissionProjectionChart({
                   fillOpacity={0.9}
                   className="cursor-pointer"
                   radius={[4, 4, 0, 0]}
-                  // Dynamic bar width based on number of data points and screen size
                   maxBarSize={isMobile ? 20 : (commissionData.length > 6 ? 40 : 60)}
                   cursor={onYearSelect ? "pointer" : undefined}
-                  // Use fill with conditional logic based on selection state
                   fill="var(--color-commission)"
-                  // Apply styles using a function that returns the proper format expected by recharts
-                  style={(entry) => {
+                  style={function(entry) {
                     return entry.isSelected 
                       ? { fill: "#047857" } 
                       : { fill: "var(--color-commission)" };
@@ -143,7 +140,7 @@ export default function CommissionProjectionChart({
           </ChartContainer>
         </div>
         {onYearSelect && (
-          <div className="text-center text-sm text-muted-foreground mt-4">
+          <div className="text-center text-xs text-muted-foreground mt-2 mb-4">
             Click on a bar to filter policies by that year
           </div>
         )}
