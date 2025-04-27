@@ -87,14 +87,17 @@ export default function DashboardLayout() {
           <SidebarTrigger />
           
           {/* Quick action buttons */}
-          <div className="ml-auto flex items-center gap-2">
-            <Link to="/clients/new">
-              <PlusCircle className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
-              <span className="sr-only">Add Client</span>
+          <div className="ml-auto flex items-center gap-3">
+            <Link 
+              to="/clients/new"
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <PlusCircle className="h-4 w-4" />
+              <span className="hidden sm:inline">Add Client</span>
             </Link>
           </div>
         </header>
-        <main className="grid flex-1 items-start gap-4 p-4 md:p-6">
+        <main className="flex-1 p-4 md:p-6">
           <div className="w-full max-w-[1600px] mx-auto">
             <Outlet />
           </div>
