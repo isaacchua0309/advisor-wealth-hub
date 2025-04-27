@@ -4,7 +4,8 @@ import { Policy } from "@/types/policy";
 import PoliciesTable from "@/components/policies/PoliciesTable";
 import { Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { calculateDaysUntilRenewal, formatCurrency } from "./PolicyUtils";
+import { Badge } from "@/components/ui/badge";
 
 interface PolicyListContainerProps {
   isLoadingPolicies: boolean;
@@ -55,38 +56,57 @@ export default function PolicyListContainer({
           
           <TabsContent value="compact" className="w-full">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-              {filteredPolicies.map((policy) => (
-                <div 
-                  key={policy.id} 
-                  className="bg-white rounded-lg border p-4 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-medium text-sm truncate max-w-[70%]">{policy.policy_name}</h3>
-                    <div className={`px-2 py-1 rounded-full text-xs ${
-                      policy.status === 'active' ? 'bg-green-100 text-green-800' : 
-                      policy.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
-                      'bg-red-100 text-red-800'
-                    }`}>
-                      {policy.status}
+              {filteredPolicies.map((policy) => {
+                const daysUntilRenewal = calculateDaysUntilRenewal(policy);
+                const isRenewingSoon = daysUntilRenewal !== null && daysUntilRenewal <= 30;
+                
+                return (
+                  <div 
+                    key={policy.id} 
+                    className={`bg-white rounded-lg border p-4 hover:shadow-md transition-shadow ${
+                      isRenewingSoon ? 'border-amber-300' : ''
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <h3 className="font-medium text-sm truncate max-w-[70%]">
+                        <a href={`/clients/${policy.client_id}`} className="text-blue-600 hover:text-blue-800 hover:underline">
+                          {policy.policy_name}
+                        </a>
+                      </h3>
+                      <div className={`px-2 py-1 rounded-full text-xs ${
+                        policy.status === 'active' ? 'bg-green-100 text-green-800' : 
+                        policy.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {policy.status}
+                      </div>
+                    </div>
+                    
+                    <div className="mt-2 text-xs text-muted-foreground truncate">
+                      {policy.policy_type} • {policy.provider || 'No provider'}
+                    </div>
+                    
+                    {isRenewingSoon && (
+                      <div className="mt-2 flex items-center">
+                        <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-300 text-[10px]">
+                          Renews in {daysUntilRenewal} days
+                        </Badge>
+                      </div>
+                    )}
+                    
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <div>
+                        <p className="text-xs text-muted-foreground">First Year</p>
+                        <p className="text-sm font-medium">{formatCurrency(policy.first_year_commission)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Ongoing</p>
+                        <p className="text-sm font-medium">{formatCurrency(policy.annual_ongoing_commission)}</p>
+                      </div>
                     </div>
                   </div>
-                  
-                  <div className="mt-2 text-xs text-muted-foreground truncate">
-                    {policy.policy_type} • {policy.provider || 'No provider'}
-                  </div>
-                  
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Premium</p>
-                      <p className="text-sm font-medium">${policy.premium?.toLocaleString() || '0'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">First Year</p>
-                      <p className="text-sm font-medium">${policy.first_year_commission?.toLocaleString() || '0'}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </TabsContent>
         </Tabs>

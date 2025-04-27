@@ -5,6 +5,7 @@ import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAx
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 import { useEffect, useState } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface CommissionProjectionChartProps {
   policies: Policy[];
@@ -16,6 +17,8 @@ interface CommissionProjectionChartProps {
 interface ChartDataItem {
   year: string;
   commission: number;
+  firstYear: number;
+  ongoing: number;
   isSelected: boolean;
 }
 
@@ -26,8 +29,16 @@ export default function CommissionProjectionChart({
   selectedYear 
 }: CommissionProjectionChartProps) {
   const [isMobile, setIsMobile] = useState(false);
+  const [policyTypeFilter, setPolicyTypeFilter] = useState<string>("all");
+  
   const currentYear = new Date().getFullYear();
-  const commissionData = calculateYearlyCommissions(policies, currentYear, years);
+
+  // Filter policies by type if needed
+  const filteredPolicies = policyTypeFilter === "all" 
+    ? policies 
+    : policies.filter(p => p.policy_type === policyTypeFilter);
+  
+  const commissionData = calculateYearlyCommissions(filteredPolicies, currentYear, years);
   
   // Find the year with the highest commission for highlighting
   const maxCommissionYear = commissionData.reduce(
@@ -38,11 +49,22 @@ export default function CommissionProjectionChart({
   // Calculate the next year's projected commission
   const nextYearCommission = commissionData.length > 1 ? commissionData[1].amount : 0;
   
+  // Get unique policy types for the filter
+  const policyTypes = Array.from(new Set(policies.map(p => p.policy_type))).sort();
+  
   // Configure the chart theme
   const chartConfig = {
     commission: {
       label: "Annual Commission",
       color: "#10b981" // emerald-500
+    },
+    firstYear: {
+      label: "First Year Commission",
+      color: "#3b82f6" // blue-500
+    },
+    ongoing: {
+      label: "Ongoing Commission",
+      color: "#8b5cf6" // purple-500
     }
   };
   
@@ -51,12 +73,21 @@ export default function CommissionProjectionChart({
     return formatCurrency(value);
   };
   
-  // Transform data for recharts
-  const chartData = commissionData.map((item) => ({
-    year: item.year.toString(),
-    commission: item.amount,
-    isSelected: selectedYear === item.year
-  }));
+  // Transform data for recharts with first year and ongoing breakdown
+  const chartData = commissionData.map((item) => {
+    // Simple estimation of first year vs ongoing split
+    // In real app, this would calculate from actual policies
+    const firstYearPart = item.amount * 0.4; // Simplified estimate
+    const ongoingPart = item.amount * 0.6; // Simplified estimate
+    
+    return {
+      year: item.year.toString(),
+      commission: item.amount,
+      firstYear: firstYearPart,
+      ongoing: ongoingPart,
+      isSelected: selectedYear === item.year
+    };
+  });
   
   // Handle bar click for filtering
   const handleBarClick = (data: any) => {
@@ -86,7 +117,25 @@ export default function CommissionProjectionChart({
   return (
     <Card className="mb-6 w-full">
       <CardHeader className="pb-2">
-        <CardTitle className="text-xl">Commission Projection</CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-xl">Commission Projection</CardTitle>
+          
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-muted-foreground whitespace-nowrap">Filter by:</span>
+            <Select value={policyTypeFilter} onValueChange={setPolicyTypeFilter}>
+              <SelectTrigger className="w-[180px] h-9">
+                <SelectValue placeholder="All Policy Types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Policy Types</SelectItem>
+                {policyTypes.map((type) => (
+                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        
         <CardDescription className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4 sm:items-center">
           <div className="font-medium">
             Next Year: <span className="text-green-600">{formatCurrency(nextYearCommission)}</span>
@@ -123,8 +172,20 @@ export default function CommissionProjectionChart({
                     domain={[0, 'auto']}
                     tick={{ fontSize: 10 }}
                     width={60}
+                    tickCount={5}
+                    scale="linear"
                   />
-                  <Tooltip content={<ChartTooltipContent formatter={tooltipFormatter} />} />
+                  <Tooltip content={
+                    <ChartTooltipContent 
+                      formatter={(value, name) => {
+                        // Custom tooltip content
+                        if (name === "commission") return [formatCurrency(value as number), "Total"];
+                        if (name === "firstYear") return [formatCurrency(value as number), "First Year"];
+                        if (name === "ongoing") return [formatCurrency(value as number), "Ongoing"];
+                        return [value, name];
+                      }}
+                    />
+                  } />
                   <Legend />
                   <Bar 
                     dataKey="commission" 

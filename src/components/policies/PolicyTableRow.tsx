@@ -22,7 +22,8 @@ import {
   calculatePolicyAge,
   calculateCommissionMaturityDate,
   calculateNextRenewalDate,
-  formatReadableDate
+  formatReadableDate,
+  calculateDaysUntilRenewal
 } from "./PolicyUtils";
 
 interface PolicyTableRowProps {
@@ -38,6 +39,7 @@ export default function PolicyTableRow({ policy }: PolicyTableRowProps) {
   const policyAge = calculatePolicyAge(policy);
   const commissionMaturityDate = calculateCommissionMaturityDate(policy);
   const nextRenewalDate = calculateNextRenewalDate(policy);
+  const daysUntilRenewal = calculateDaysUntilRenewal(policy);
   
   const getPaymentStructureLabel = (type: Policy["payment_structure_type"]) => {
     const structures = {
@@ -72,11 +74,25 @@ export default function PolicyTableRow({ policy }: PolicyTableRowProps) {
     );
   };
 
+  const getRenewalUrgencyStyle = () => {
+    if (daysUntilRenewal === null) return {};
+    
+    if (daysUntilRenewal <= 30) {
+      return { color: "rgb(220, 38, 38)" }; // Red for urgent
+    } else if (daysUntilRenewal <= 60) {
+      return { color: "rgb(245, 158, 11)" }; // Amber for soon
+    } else {
+      return {}; // Default
+    }
+  };
+
   return (
     <>
       <TableRow>
         <TableCell className="font-medium sticky left-0 bg-background z-10">
-          {policy.policy_name}
+          <Link to={`/clients/${policy.client_id}`} className="text-blue-600 hover:text-blue-800 hover:underline">
+            {policy.policy_name}
+          </Link>
         </TableCell>
         <TableCell className="sticky left-[150px] bg-background z-10">{policy.policy_type}</TableCell>
         <TableCell>{policy.provider || "N/A"}</TableCell>
@@ -110,7 +126,15 @@ export default function PolicyTableRow({ policy }: PolicyTableRowProps) {
             : "N/A"}
         </TableCell>
         <TableCell>
+          {policy.end_date 
+            ? format(new Date(policy.end_date), "MMM d, yyyy")
+            : "—"}
+        </TableCell>
+        <TableCell style={getRenewalUrgencyStyle()}>
           {formatReadableDate(nextRenewalDate)}
+        </TableCell>
+        <TableCell style={getRenewalUrgencyStyle()}>
+          {daysUntilRenewal !== null ? `${daysUntilRenewal} days` : "—"}
         </TableCell>
         <TableCell>
           {formatReadableDate(commissionMaturityDate)}

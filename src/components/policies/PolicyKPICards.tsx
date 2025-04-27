@@ -80,10 +80,21 @@ export default function PolicyKPICards({ policies }: PolicyKPICardsProps) {
   // Get commission metrics
   const { totalCollectedCommission, thisYearCommission } = calculateKpiMetrics(policies);
   
+  // Calculate renewals this quarter (90 days)
   const policiesRenewingSoon = policies.filter(policy => 
     isRenewingSoon(policy, 90)
   ).length;
   
+  // Calculate upcoming expirations in the next 90 days
+  const upcomingExpirations = policies.filter(policy => {
+    if (!policy.end_date || policy.status?.toLowerCase() !== "active") return false;
+    const endDate = new Date(policy.end_date);
+    const today = new Date();
+    const daysUntilExpiration = Math.floor((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    return daysUntilExpiration >= 0 && daysUntilExpiration <= 90;
+  }).length;
+  
+  // Find highest value policy
   const highestValuePolicy = policies.length > 0 
     ? [...policies].sort((a, b) => (b.value || 0) - (a.value || 0))[0]
     : null;
@@ -94,7 +105,7 @@ export default function PolicyKPICards({ policies }: PolicyKPICardsProps) {
   const nextYearCommission = commissionProjection.length > 1 ? commissionProjection[1].amount : 0;
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Active Policies</CardTitle>
@@ -157,6 +168,18 @@ export default function PolicyKPICards({ policies }: PolicyKPICardsProps) {
           <div className="text-2xl font-bold">{policiesRenewingSoon}</div>
           <p className="text-xs text-muted-foreground">
             Policies renewing in next 90 days
+          </p>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Upcoming Expirations</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-amber-500">{upcomingExpirations}</div>
+          <p className="text-xs text-muted-foreground">
+            Policies expiring in next 90 days
           </p>
         </CardContent>
       </Card>

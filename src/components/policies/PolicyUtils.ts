@@ -1,74 +1,69 @@
 import { Policy } from "@/types/policy";
-import { differenceInYears, addYears, format, getYear } from "date-fns";
+import { format, differenceInYears, addYears, addMonths, differenceInDays } from "date-fns";
 
-// Format currency with dollar sign
-export const formatCurrency = (amount: number | null | undefined): string => {
-  if (amount === null || amount === undefined) return "—";
-  return `$${amount.toLocaleString()}`;
+// Format currency to USD
+export const formatCurrency = (value: number | null | undefined): string => {
+  if (value === null || value === undefined) return "$0";
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(value);
 };
 
-// Format percentage with % sign
-export const formatPercentage = (percentage: number | null | undefined): string => {
-  if (percentage === null || percentage === undefined) return "—";
-  return `${percentage}%`;
+// Format percentage 
+export const formatPercentage = (value: number): string => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'percent',
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  }).format(value / 100); // Assuming the value is already multiplied by 100
 };
 
-// Format date from ISO to readable format
-export const formatDate = (date: string | null | undefined): string => {
-  if (!date) return "—";
-  return new Date(date).toLocaleDateString();
-};
-
-// Get a color based on policy status
-export const getStatusColor = (status: string | null | undefined): string => {
-  if (!status) return "gray";
-  
-  status = status.toLowerCase();
-  
-  if (status === "active") return "green";
-  if (status === "inactive" || status === "expired") return "red";
-  if (status === "pending") return "orange";
-  if (status === "cancelled") return "gray";
-  
-  return "gray";
-};
-
-// Calculate policy time remaining (in percentage)
-export const calculateTimeRemaining = (policy: Policy): number => {
-  if (!policy.start_date || !policy.end_date) return 0;
+// Calculate the next renewal date for a policy
+export const calculateNextRenewalDate = (policy: Policy): Date | null => {
+  if (!policy.start_date) return null;
   
   const startDate = new Date(policy.start_date);
-  const endDate = new Date(policy.end_date);
   const currentDate = new Date();
   
-  // If policy hasn't started yet
-  if (currentDate < startDate) return 0;
-  // If policy has ended
-  if (currentDate > endDate) return 100;
+  // Calculate years since policy started
+  const yearsSinceStart = differenceInYears(currentDate, startDate);
   
-  const totalDuration = endDate.getTime() - startDate.getTime();
-  const elapsed = currentDate.getTime() - startDate.getTime();
+  // Calculate next anniversary date
+  let nextAnniversary = addYears(startDate, yearsSinceStart);
   
-  return Math.round((elapsed / totalDuration) * 100);
+  // If the anniversary already passed this year, go to next year
+  if (nextAnniversary < currentDate) {
+    nextAnniversary = addYears(startDate, yearsSinceStart + 1);
+  }
+  
+  return nextAnniversary;
 };
 
-// Calculate total expected commission over the lifetime of the policy
-export const calculateTotalExpectedCommission = (policy: Policy): number => {
-  const firstYearCommission = policy.first_year_commission || 0;
-  const annualOngoingCommission = policy.annual_ongoing_commission || 0;
-  const commissionDuration = policy.commission_duration || 0;
+// Calculate days until the next renewal
+export const calculateDaysUntilRenewal = (policy: Policy): number | null => {
+  const renewalDate = calculateNextRenewalDate(policy);
   
-  return firstYearCommission + (annualOngoingCommission * commissionDuration);
+  if (!renewalDate) return null;
+  
+  const today = new Date();
+  return differenceInDays(renewalDate, today);
 };
 
-// Calculate premium to value ratio as a percentage
-export const calculatePremiumToValueRatio = (policy: Policy): number | null => {
-  if (!policy.premium || !policy.value || policy.value === 0) return null;
+// Check if a policy is renewing soon within specified days
+export const isRenewingSoon = (policy: Policy, days: number): boolean => {
+  const nextRenewal = calculateNextRenewalDate(policy);
+  if (!nextRenewal) return false;
   
-  return (policy.premium / policy.value) * 100;
+  const currentDate = new Date();
+  const daysUntilRenewal = differenceInDays(nextRenewal, currentDate);
+  
+  return daysUntilRenewal >= 0 && daysUntilRenewal <= days;
 };
 
-// Calculate policy age in years
+// Calculate the age of a policy in years
 export const calculatePolicyAge = (policy: Policy): number | null => {
   if (!policy.start_date) return null;
   
@@ -78,7 +73,24 @@ export const calculatePolicyAge = (policy: Policy): number | null => {
   return differenceInYears(currentDate, startDate);
 };
 
-// Calculate commission maturity date
+// Calculate the premium to value ratio as a percentage
+export const calculatePremiumToValueRatio = (policy: Policy): number | null => {
+  if (!policy.premium || !policy.value || policy.value === 0) return null;
+  
+  return (policy.premium / policy.value) * 100;
+};
+
+// Calculate the total expected commission over the life of the policy
+export const calculateTotalExpectedCommission = (policy: Policy): number => {
+  const firstYear = policy.first_year_commission || 0;
+  const ongoing = policy.annual_ongoing_commission || 0;
+  const duration = policy.commission_duration || 0;
+  
+  // If there's ongoing commission, add it for remaining years
+  return firstYear + (ongoing * Math.max(0, duration - 1));
+};
+
+// Calculate the date when commission payments will end
 export const calculateCommissionMaturityDate = (policy: Policy): Date | null => {
   if (!policy.start_date || !policy.commission_duration) return null;
   
@@ -86,94 +98,58 @@ export const calculateCommissionMaturityDate = (policy: Policy): Date | null => 
   return addYears(startDate, policy.commission_duration);
 };
 
-// Calculate next renewal date
-export const calculateNextRenewalDate = (policy: Policy): Date | null => {
-  if (!policy.start_date) return null;
-  
-  const startDate = new Date(policy.start_date);
-  const currentDate = new Date();
-  const startMonth = startDate.getMonth();
-  const startDay = startDate.getDate();
-  
-  let renewalDate = new Date(currentDate.getFullYear(), startMonth, startDay);
-  
-  // If the renewal date for this year has already passed, get next year's date
-  if (renewalDate < currentDate) {
-    renewalDate.setFullYear(currentDate.getFullYear() + 1);
-  }
-  
-  return renewalDate;
-};
-
-// Format date in a more readable format
+// Format date in a readable format or return appropriate message
 export const formatReadableDate = (date: Date | null): string => {
-  if (!date) return "—";
+  if (!date) return '—';
+  
   return format(date, 'MMM d, yyyy');
 };
 
-// Check if a policy is renewing within the next X days
-export const isRenewingSoon = (policy: Policy, days: number = 90): boolean => {
-  const nextRenewal = calculateNextRenewalDate(policy);
-  if (!nextRenewal) return false;
-  
-  const currentDate = new Date();
-  const futureDate = new Date();
-  futureDate.setDate(currentDate.getDate() + days);
-  
-  return nextRenewal >= currentDate && nextRenewal <= futureDate;
-};
+// Calculate yearly commissions for projection
+export interface YearlyCommission {
+  year: number;
+  amount: number;
+}
 
-// Calculate commission for a specific year
-export const calculateCommissionForYear = (policy: Policy, year: number): number => {
-  if (!policy.start_date || !policy.status || policy.status.toLowerCase() !== "active") {
-    return 0;
-  }
-  
-  const startDate = new Date(policy.start_date);
-  const startYear = startDate.getFullYear();
-  
-  // If it's the start year, return first year commission
-  if (year === startYear) {
-    return policy.first_year_commission || 0;
-  }
-  
-  // For ongoing commission, check if we're within the commission duration period
-  if (year > startYear && policy.commission_duration) {
-    const endYear = startYear + policy.commission_duration - 1; // -1 because duration includes the first year
-    if (year <= endYear) {
-      return policy.annual_ongoing_commission || 0;
-    }
-  }
-  
-  return 0;
-};
-
-// Calculate total commissions for all policies by year
 export const calculateYearlyCommissions = (
-  policies: Policy[],
-  startYear: number = new Date().getFullYear(),
-  numYears: number = 10
-): { year: number; amount: number }[] => {
-  // Filter to only active policies
-  const activePolicies = policies.filter(p => p.status?.toLowerCase() === 'active');
+  policies: Policy[], 
+  startYear: number,
+  numberOfYears: number
+): YearlyCommission[] => {
+  const result: YearlyCommission[] = [];
   
-  // Create the projection for each year
-  const yearlyProjections = [];
-  
-  for (let i = 0; i < numYears; i++) {
-    const year = startYear + i;
-    let totalCommission = 0;
-    
-    // For each year, sum up first-year and ongoing commissions across all policies
-    activePolicies.forEach(policy => {
-      totalCommission += calculateCommissionForYear(policy, year);
-    });
-    
-    yearlyProjections.push({
-      year,
-      amount: totalCommission
+  // Initialize with zeros for all years
+  for (let i = 0; i < numberOfYears; i++) {
+    result.push({
+      year: startYear + i,
+      amount: 0
     });
   }
   
-  return yearlyProjections;
+  policies.forEach(policy => {
+    if (!policy.start_date) return;
+    
+    const startDate = new Date(policy.start_date);
+    const policyStartYear = startDate.getFullYear();
+    
+    // For each year in our projection
+    for (let i = 0; i < numberOfYears; i++) {
+      const projectionYear = startYear + i;
+      const yearsSincePolicyStart = projectionYear - policyStartYear;
+      
+      // First year commission
+      if (yearsSincePolicyStart === 0 && projectionYear >= policyStartYear) {
+        result[i].amount += policy.first_year_commission || 0;
+      } 
+      // Ongoing commission for subsequent years
+      else if (
+        yearsSincePolicyStart > 0 && 
+        (policy.commission_duration === null || yearsSincePolicyStart <= policy.commission_duration)
+      ) {
+        result[i].amount += policy.annual_ongoing_commission || 0;
+      }
+    }
+  });
+  
+  return result;
 };

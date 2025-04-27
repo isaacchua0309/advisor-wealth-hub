@@ -22,7 +22,9 @@ type SortColumn =
   | "total_expected_commission"
   | "premium_to_value_ratio"
   | "policy_age"
-  | "start_date" 
+  | "start_date"
+  | "end_date"
+  | "days_until_renewal"
   | "status";
 
 interface PoliciesTableProps {
@@ -169,7 +171,26 @@ export default function PoliciesTable({
                 Start Date
               </PolicyTableHead>
               
+              <PolicyTableHead 
+                column="end_date"
+                sortBy={sortBy}
+                sortDirection={sortDirection as "asc" | "desc"}
+                onSort={handleSort}
+              >
+                End Date
+              </PolicyTableHead>
+              
               <PolicyTableHead>Next Renewal</PolicyTableHead>
+              
+              <PolicyTableHead 
+                column="days_until_renewal"
+                sortBy={sortBy}
+                sortDirection={sortDirection as "asc" | "desc"}
+                onSort={handleSort}
+                tooltip="Days remaining until next renewal"
+              >
+                Days to Renewal
+              </PolicyTableHead>
               
               <PolicyTableHead>Commission Maturity</PolicyTableHead>
               
@@ -192,7 +213,7 @@ export default function PoliciesTable({
               ))
             ) : (
               <TableRow>
-                <td colSpan={16} className="h-24 text-center p-4">
+                <td colSpan={18} className="h-24 text-center p-4">
                   No policies found.
                 </td>
               </TableRow>

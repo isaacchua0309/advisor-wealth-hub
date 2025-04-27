@@ -9,6 +9,8 @@ import CommissionProjectionChart from "@/components/policies/CommissionProjectio
 import { calculateTotalExpectedCommission } from "@/components/policies/PolicyUtils";
 import YearFilter from "@/components/policies/YearFilter";
 import PolicyListContainer from "@/components/policies/PolicyListContainer";
+import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
 
 export type PolicyFilters = {
   search: string;
@@ -76,7 +78,9 @@ export default function Policies() {
 
     let filtered = typedPolicies.filter(policy => {
       const searchMatch = !filters.search || 
-        policy.policy_name.toLowerCase().includes(filters.search.toLowerCase());
+        policy.policy_name.toLowerCase().includes(filters.search.toLowerCase()) ||
+        policy.policy_type.toLowerCase().includes(filters.search.toLowerCase()) ||
+        (policy.provider?.toLowerCase() || "").includes(filters.search.toLowerCase());
       
       const typeMatch = filters.policyType === "all" || 
         policy.policy_type === filters.policyType;
@@ -212,6 +216,25 @@ export default function Policies() {
           valueB = b.start_date ? new Date(b.start_date).getTime() : 0;
           break;
           
+        case "end_date":
+          valueA = a.end_date ? new Date(a.end_date).getTime() : Infinity;
+          valueB = b.end_date ? new Date(b.end_date).getTime() : Infinity;
+          break;
+          
+        case "days_until_renewal":
+          const getDaysUntilRenewal = (policy: Policy): number => {
+            if (!policy.start_date) return Infinity;
+            const startDate = new Date(policy.start_date);
+            const currentDate = new Date();
+            const yearsSinceStart = Math.floor((currentDate.getTime() - startDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+            const nextRenewalDate = new Date(startDate);
+            nextRenewalDate.setFullYear(startDate.getFullYear() + yearsSinceStart + 1);
+            return Math.ceil((nextRenewalDate.getTime() - currentDate.getTime()) / (24 * 60 * 60 * 1000));
+          };
+          valueA = getDaysUntilRenewal(a);
+          valueB = getDaysUntilRenewal(b);
+          break;
+          
         default:
           return 0;
       }
@@ -253,6 +276,24 @@ export default function Policies() {
       sortDirection: prev.sortBy === column && prev.sortDirection === "asc" ? "desc" : "asc"
     }));
   };
+  
+  // Check if any filters are active
+  const hasActiveFilters = 
+    filters.search !== "" ||
+    filters.policyType !== "all" ||
+    filters.paymentStructure !== "all" ||
+    filters.status !== "all" ||
+    filters.policyDuration[0] > 0 ||
+    filters.policyDuration[1] < 100 ||
+    filters.premiumRange[0] > 0 ||
+    filters.premiumRange[1] < maxPremium ||
+    filters.commissionRange[0] > 0 ||
+    filters.commissionRange[1] < 100 ||
+    filters.firstYearCommissionRange[0] > 0 ||
+    filters.firstYearCommissionRange[1] < maxFirstYearCommission ||
+    filters.showRenewingThisYear ||
+    filters.showTopByCommission ||
+    selectedYear !== null;
 
   return (
     <div className="w-full max-w-full overflow-hidden px-1">
@@ -282,7 +323,30 @@ export default function Policies() {
         )}
       </div>
       
-      <Card className="mb-8 p-4 md:p-6 bg-slate-50/50 border-slate-100">
+      <Card className="mb-8 p-4 md:p-6 bg-slate-50/30 border-slate-100">
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-medium">Filters</h3>
+            {hasActiveFilters && (
+              <div className="bg-primary text-white text-xs rounded-full h-5 min-w-5 flex items-center justify-center px-1.5">
+                !
+              </div>
+            )}
+          </div>
+          
+          {hasActiveFilters && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={clearFilters}
+              className="flex items-center gap-1"
+            >
+              <X className="h-4 w-4" />
+              Reset Filters
+            </Button>
+          )}
+        </div>
+        
         <PolicyFilters 
           filters={filters} 
           setFilters={setFilters}
@@ -291,10 +355,14 @@ export default function Policies() {
           maxFirstYearCommission={maxFirstYearCommission}
         />
         
-        <YearFilter 
-          selectedYear={selectedYear} 
-          onClearYear={handleClearYear} 
-        />
+        {selectedYear !== null && (
+          <div className="mt-4">
+            <YearFilter 
+              selectedYear={selectedYear} 
+              onClearYear={handleClearYear} 
+            />
+          </div>
+        )}
       </Card>
       
       <div className="w-full max-w-full mb-8 overflow-hidden">
