@@ -34,13 +34,13 @@ export default function PolicyListContainer({
     return (
       <div className="w-full">
         <Tabs defaultValue="table" className="w-full">
-          <TabsList className="mb-4">
-            <TabsTrigger value="table">Table View</TabsTrigger>
-            <TabsTrigger value="compact">Compact View</TabsTrigger>
+          <TabsList className="mb-4 w-full md:w-auto flex">
+            <TabsTrigger value="table" className="flex-1 md:flex-none">Table View</TabsTrigger>
+            <TabsTrigger value="compact" className="flex-1 md:flex-none">Compact View</TabsTrigger>
           </TabsList>
           
           <TabsContent value="table" className="w-full">
-            <div className="responsive-table-container">
+            <div className="responsive-table-container w-full overflow-x-auto">
               <PoliciesTable 
                 policies={filteredPolicies}
                 sortBy={sortBy}
@@ -58,7 +58,7 @@ export default function PolicyListContainer({
                   className="bg-white rounded-lg border p-4 hover:shadow-md transition-shadow"
                 >
                   <div className="flex justify-between items-start">
-                    <h3 className="font-medium text-sm">{policy.policy_name}</h3>
+                    <h3 className="font-medium text-sm truncate max-w-[70%]">{policy.policy_name}</h3>
                     <div className={`px-2 py-1 rounded-full text-xs ${
                       policy.status === 'active' ? 'bg-green-100 text-green-800' : 
                       policy.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
@@ -68,7 +68,7 @@ export default function PolicyListContainer({
                     </div>
                   </div>
                   
-                  <div className="mt-2 text-xs text-muted-foreground">
+                  <div className="mt-2 text-xs text-muted-foreground truncate">
                     {policy.policy_type} • {policy.provider || 'No provider'}
                   </div>
                   

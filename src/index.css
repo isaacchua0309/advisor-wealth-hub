@@ -66,13 +66,19 @@
     --ring: 212.7 26.8% 83.9%;
   }
   
-  /* Apply global styles to prevent horizontal scrolling */
+  /* Apply stronger global styles to prevent horizontal scrolling */
   html, body {
     overflow-x: hidden;
-    max-width: 100%;
+    max-width: 100vw;
     width: 100%;
     margin: 0;
     padding: 0;
+  }
+  
+  #root {
+    max-width: 100vw;
+    width: 100%;
+    overflow-x: hidden;
   }
   
   /* Apply smooth scrolling */

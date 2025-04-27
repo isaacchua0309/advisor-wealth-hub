@@ -129,7 +129,7 @@ export default function CommissionProjectionChart({
                   maxBarSize={isMobile ? 20 : (commissionData.length > 6 ? 40 : 60)}
                   cursor={onYearSelect ? "pointer" : undefined}
                   fill="var(--color-commission)"
-                  style={function(entry) {
+                  style={(entry) => {
                     return entry.isSelected 
                       ? { fill: "#047857" } 
                       : { fill: "var(--color-commission)" };
