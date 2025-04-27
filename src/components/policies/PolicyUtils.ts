@@ -1,6 +1,6 @@
 
 import { Policy } from "@/types/policy";
-import { differenceInYears, addYears, format } from "date-fns";
+import { differenceInYears, addYears, format, getYear } from "date-fns";
 
 // Format currency with dollar sign
 export const formatCurrency = (amount: number | null | undefined): string => {
@@ -122,4 +122,51 @@ export const isRenewingSoon = (policy: Policy, days: number = 90): boolean => {
   futureDate.setDate(currentDate.getDate() + days);
   
   return nextRenewal >= currentDate && nextRenewal <= futureDate;
+};
+
+// Calculate commission for a specific year
+export const calculateCommissionForYear = (policy: Policy, year: number): number => {
+  if (!policy.start_date || !policy.commission_duration || !policy.annual_ongoing_commission) {
+    return 0;
+  }
+  
+  const startDate = new Date(policy.start_date);
+  const startYear = getYear(startDate);
+  const maturityYear = startYear + policy.commission_duration;
+  
+  // If the year is outside the commission duration, return 0
+  if (year < startYear || year > maturityYear) {
+    return 0;
+  }
+  
+  return policy.annual_ongoing_commission;
+};
+
+// Calculate total commissions for all policies by year
+export const calculateYearlyCommissions = (
+  policies: Policy[],
+  startYear: number = new Date().getFullYear(),
+  numYears: number = 10
+): { year: number; amount: number }[] => {
+  // Filter to only active policies
+  const activePolicies = policies.filter(p => p.status?.toLowerCase() === 'active');
+  
+  // Create the projection for each year
+  const yearlyProjections = [];
+  
+  for (let i = 0; i < numYears; i++) {
+    const year = startYear + i;
+    let totalCommission = 0;
+    
+    activePolicies.forEach(policy => {
+      totalCommission += calculateCommissionForYear(policy, year);
+    });
+    
+    yearlyProjections.push({
+      year,
+      amount: totalCommission
+    });
+  }
+  
+  return yearlyProjections;
 };

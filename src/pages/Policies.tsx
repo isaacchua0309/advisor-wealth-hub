@@ -7,6 +7,7 @@ import PolicyFilters from "@/components/policies/PolicyFilters";
 import PoliciesTable from "@/components/policies/PoliciesTable";
 import { Loader2 } from "lucide-react";
 import PolicyKPICards from "@/components/policies/PolicyKPICards";
+import CommissionProjectionChart from "@/components/policies/CommissionProjectionChart";
 import { calculateTotalExpectedCommission } from "@/components/policies/PolicyUtils";
 
 // Define filter state type
@@ -31,6 +32,9 @@ export default function Policies() {
   
   // State for filtered policies
   const [filteredPolicies, setFilteredPolicies] = useState<Policy[]>([]);
+  
+  // State for year selection (for highlighting in the projection chart)
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
   
   // Initialize filter state with non-empty default values
   const [filters, setFilters] = useState<PolicyFilters>({
@@ -119,9 +123,12 @@ export default function Policies() {
       // Filter for policies renewing this year
       const renewingThisYearMatch = !filters.showRenewingThisYear || isRenewingThisYear(policy);
       
+      // If a specific year is selected, filter by policies active that year
+      const yearMatch = selectedYear === null || isPolicyActiveInYear(policy, selectedYear);
+      
       return searchMatch && typeMatch && paymentStructureMatch && statusMatch && 
         durationMatch && premiumMatch && commissionMatch && firstYearCommissionMatch &&
-        renewingThisYearMatch;
+        renewingThisYearMatch && yearMatch;
     });
     
     // Sort policies based on selected sort option
@@ -139,7 +146,7 @@ export default function Policies() {
     }
     
     setFilteredPolicies(filtered);
-  }, [policies, filters]);
+  }, [policies, filters, selectedYear]);
 
   // Check if a policy is renewing this year
   const isRenewingThisYear = (policy: Policy): boolean => {
@@ -160,6 +167,30 @@ export default function Policies() {
     
     // Check if renewal is within this calendar year
     return renewalDate.getFullYear() === currentYear;
+  };
+  
+  // Check if a policy is active in a given year
+  const isPolicyActiveInYear = (policy: Policy, year: number): boolean => {
+    if (!policy.start_date) return false;
+    
+    const startDate = new Date(policy.start_date);
+    const startYear = startDate.getFullYear();
+    
+    // If the policy has an end date, check if the year is within the range
+    if (policy.end_date) {
+      const endDate = new Date(policy.end_date);
+      const endYear = endDate.getFullYear();
+      return year >= startYear && year <= endYear;
+    }
+    
+    // If the policy has a commission duration, calculate end year
+    if (policy.commission_duration) {
+      const endYear = startYear + policy.commission_duration;
+      return year >= startYear && year <= endYear;
+    }
+    
+    // Default: assume policy is active if it has started
+    return year >= startYear;
   };
   
   // Sort policies based on selected criteria
@@ -234,6 +265,12 @@ export default function Policies() {
       sortBy: "policy_name",
       sortDirection: "asc"
     });
+    setSelectedYear(null);
+  };
+  
+  // Handle year selection from the chart
+  const handleYearSelect = (year: number) => {
+    setSelectedYear(year === selectedYear ? null : year);
   };
 
   return (
@@ -252,6 +289,14 @@ export default function Policies() {
         <PolicyKPICards policies={filteredPolicies} />
       )}
       
+      {/* Commission Projection Chart */}
+      {!isLoadingPolicies && policies && (
+        <CommissionProjectionChart 
+          policies={filteredPolicies}
+          years={10} 
+        />
+      )}
+      
       <Card className="mb-6 p-4 mt-6">
         <PolicyFilters 
           filters={filters} 
@@ -260,6 +305,18 @@ export default function Policies() {
           maxPremium={maxPremium}
           maxFirstYearCommission={maxFirstYearCommission}
         />
+        
+        {selectedYear && (
+          <div className="mt-4 p-2 bg-green-50 border border-green-200 rounded-md text-sm">
+            <span className="font-medium">Filtering policies active in year: {selectedYear}</span>
+            <button 
+              className="ml-2 text-green-600 hover:text-green-800 underline"
+              onClick={() => setSelectedYear(null)}
+            >
+              Clear year filter
+            </button>
+          </div>
+        )}
       </Card>
       
       {isLoadingPolicies ? (

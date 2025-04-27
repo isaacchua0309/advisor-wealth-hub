@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Policy } from "@/types/policy";
 import { formatCurrency } from "./PolicyUtils";
-import { calculateNextRenewalDate, isRenewingSoon } from "./PolicyUtils";
+import { calculateNextRenewalDate, isRenewingSoon, calculateYearlyCommissions } from "./PolicyUtils";
 
 interface PolicyKPICardsProps {
   policies: Policy[];
@@ -31,9 +31,14 @@ export default function PolicyKPICards({ policies }: PolicyKPICardsProps) {
   const highestValuePolicy = policies.length > 0 
     ? [...policies].sort((a, b) => (b.value || 0) - (a.value || 0))[0]
     : null;
+    
+  // Get next year's projected commission
+  const currentYear = new Date().getFullYear();
+  const commissionProjection = calculateYearlyCommissions(policies, currentYear, 2);
+  const nextYearCommission = commissionProjection.length > 1 ? commissionProjection[1].amount : 0;
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 mb-6">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6 mb-6">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Active Policies</CardTitle>
@@ -70,6 +75,20 @@ export default function PolicyKPICards({ policies }: PolicyKPICardsProps) {
           </div>
           <p className="text-xs text-muted-foreground">
             Yearly recurring revenue
+          </p>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Next Year's Projection</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-emerald-600">
+            {formatCurrency(nextYearCommission)}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Projected commission for {currentYear + 1}
           </p>
         </CardContent>
       </Card>
