@@ -44,11 +44,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
 import { CommissionGoalProgress } from "@/components/dashboard/CommissionGoalProgress";
+import { DashboardKPICards } from "@/components/dashboard/DashboardKPICards";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { 
-    totalCommission,
+    totalClients,
     activeClients,
     activePolicies,
     pendingTasks,
@@ -143,6 +144,15 @@ export default function Dashboard() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <DashboardKPICards 
+        totalClients={totalClients || 0}
+        activePolicies={activePolicies || 0}
+        pendingCommissions={pendingCommissions || 0}
+        projectedIncome={projectedIncome || 0}
+        yearToDateCommission={yearToDateCommission || 0}
+        upcomingRenewals={upcomingRenewals || 0}
+      />
       
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
