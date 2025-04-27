@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   Dialog,
@@ -820,5 +819,4 @@ export function EditPolicyDialog({ policy, open, onOpenChange }: EditPolicyDialo
   );
 }
 
-// Export as default as well to maintain compatibility
 export default EditPolicyDialog;
