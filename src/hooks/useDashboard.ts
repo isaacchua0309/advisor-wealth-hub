@@ -22,20 +22,19 @@ export function useDashboard() {
       }
 
       // Fetch active clients (those with active policies)
-      const { data: activeClientIds, error: activeError } = await supabase
+      const { data: activeClientData, error: activeError } = await supabase
         .from('policies')
         .select('client_id')
         .eq('user_id', user?.id)
-        .eq('status', 'active')
-        .is('client_id', 'not.null');
+        .eq('status', 'active');
         
       if (activeError) {
         console.error('Error fetching active clients:', activeError);
       }
 
       // Get unique active client IDs
-      const uniqueActiveClientIds = activeClientIds 
-        ? [...new Set(activeClientIds.map(item => item.client_id))]
+      const uniqueActiveClientIds = activeClientData 
+        ? [...new Set(activeClientData.map(item => item.client_id))]
         : [];
       const activeClients = uniqueActiveClientIds.length;
 
