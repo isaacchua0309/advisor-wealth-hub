@@ -32,6 +32,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import type { Policy } from "@/types/policy";
 import { useGlobalPolicies } from "@/hooks/useGlobalPolicies";
 import { differenceInYears } from "date-fns";
+import { usePolicyForm } from "@/hooks/usePolicyForm";
 
 const formSchema = z.object({
   policy_name: z.string().min(2, {
@@ -145,6 +146,8 @@ export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPol
       global_policy_id: policy.global_policy_id || null,
     },
   });
+
+  const { getValidation, isFieldDisabled } = usePolicyForm(form);
 
   const { globalPolicies } = useGlobalPolicies();
 
@@ -749,7 +752,7 @@ export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPol
           </Button>
           <Button 
             type="submit"
-            disabled={!isValid}
+            disabled={!form.formState.isValid}
             onClick={handleSubmit(onSubmit)}
           >
             Save Changes

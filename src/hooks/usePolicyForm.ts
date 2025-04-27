@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import type { CreatePolicyInput, Policy } from '@/types/policy';
@@ -32,6 +33,7 @@ export function usePolicyForm(form: UseFormReturn<FormType>) {
   const watchPaymentStructure = form.watch('payment_structure_type');
   const watchStatus = form.watch('status');
 
+  // Auto-calculate first year commission
   useEffect(() => {
     if (watchPremium && watchCommissionRate && !form.formState.isSubmitting) {
       const totalCommission = watchPremium * (watchCommissionRate / 100);
@@ -39,6 +41,7 @@ export function usePolicyForm(form: UseFormReturn<FormType>) {
     }
   }, [watchPremium, watchCommissionRate]);
 
+  // Auto-calculate policy duration
   useEffect(() => {
     if (watchStartDate && watchEndDate && !form.formState.isSubmitting) {
       const startDate = new Date(watchStartDate);
@@ -51,6 +54,7 @@ export function usePolicyForm(form: UseFormReturn<FormType>) {
     }
   }, [watchStartDate, watchEndDate]);
 
+  // Auto-calculate ongoing commission based on payment structure
   useEffect(() => {
     if (watchPremium && watchCommissionRate && form.getValues('first_year_commission') && watchPaymentStructure) {
       const totalCommission = watchPremium * (watchCommissionRate / 100);
