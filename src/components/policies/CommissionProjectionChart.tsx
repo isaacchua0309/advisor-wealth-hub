@@ -63,6 +63,11 @@ export default function CommissionProjectionChart({
       onYearSelect(yearClicked);
     }
   };
+
+  // Custom bar fill color function
+  const getBarFillColor = (entry: any) => {
+    return entry.isSelected ? "#047857" : "var(--color-commission)";
+  };
   
   // Check for mobile screens
   useEffect(() => {
@@ -94,7 +99,7 @@ export default function CommissionProjectionChart({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px] w-full">
+        <div className="h-[300px] w-full overflow-hidden">
           <ChartContainer config={chartConfig}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart 
@@ -124,7 +129,8 @@ export default function CommissionProjectionChart({
                   dataKey="commission" 
                   name="Annual Commission" 
                   fill="#10b981" // Use a fixed color
-                  className="[&.recharts-bar-rectangle]:data-[selected=true]:fill-emerald-800"
+                  fillOpacity={0.9}
+                  className="cursor-pointer"
                   radius={[4, 4, 0, 0]}
                   // Dynamic bar width based on number of data points and screen size
                   maxBarSize={isMobile ? 20 : (commissionData.length > 6 ? 40 : 60)}
@@ -135,7 +141,7 @@ export default function CommissionProjectionChart({
           </ChartContainer>
         </div>
         {onYearSelect && (
-          <div className="text-center text-sm text-muted-foreground mt-2">
+          <div className="text-center text-sm text-muted-foreground mt-4">
             Click on a bar to filter policies by that year
           </div>
         )}

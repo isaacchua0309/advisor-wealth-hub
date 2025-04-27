@@ -259,8 +259,8 @@ export default function Policies() {
   };
 
   return (
-    <div className="w-full max-w-full overflow-x-hidden">
-      <div className="flex items-center justify-between mb-6">
+    <div className="w-full max-w-full">
+      <div className="flex items-center justify-between mb-8">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Policies</h2>
           <p className="text-muted-foreground">
@@ -269,13 +269,13 @@ export default function Policies() {
         </div>
       </div>
       
-      <div className="mb-8">
+      <div className="mb-10">
         {!isLoadingPolicies && policies && (
           <PolicyKPICards policies={filteredPolicies} />
         )}
       </div>
       
-      <div className="mb-8">
+      <div className="mb-10">
         {!isLoadingPolicies && policies && (
           <CommissionProjectionChart 
             policies={filteredPolicies}
@@ -286,7 +286,7 @@ export default function Policies() {
         )}
       </div>
       
-      <Card className="mb-8 p-4">
+      <Card className="mb-10 p-6 bg-slate-50/50 border-slate-100">
         <PolicyFilters 
           filters={filters} 
           setFilters={setFilters}
@@ -301,7 +301,7 @@ export default function Policies() {
         />
       </Card>
       
-      <div className="w-full max-w-full overflow-hidden">
+      <div className="w-full max-w-full mb-10">
         <PolicyListContainer 
           isLoadingPolicies={isLoadingPolicies}
           policies={policies}

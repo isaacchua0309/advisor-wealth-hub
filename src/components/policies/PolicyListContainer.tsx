@@ -31,13 +31,15 @@ export default function PolicyListContainer({
   
   if (filteredPolicies && filteredPolicies.length > 0) {
     return (
-      <div className="w-full overflow-x-auto">
-        <PoliciesTable 
-          policies={filteredPolicies}
-          sortBy={sortBy}
-          sortDirection={sortDirection}
-          onSort={onSort}
-        />
+      <div className="w-full">
+        <div className="overflow-x-auto">
+          <PoliciesTable 
+            policies={filteredPolicies}
+            sortBy={sortBy}
+            sortDirection={sortDirection}
+            onSort={onSort}
+          />
+        </div>
       </div>
     );
   }
