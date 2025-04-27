@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useClients } from "@/hooks/useClients";
@@ -6,7 +5,7 @@ import { AddClientDialog } from "@/components/clients/AddClientDialog";
 import { ClientsTable } from "@/components/clients/ClientsTable";
 import { ClientFilters } from "@/components/clients/ClientFilters";
 import { ClientKPICards } from "@/components/clients/ClientKPICards";
-import type { Client, CreateClientInput } from "@/types/client";
+import type { Client, CreateClientInput, ClientFilters as ClientFiltersType } from "@/types/client";
 import type { CreatePolicyInput } from "@/types/policy";
 import { addDays, isWithinInterval, parseISO, isValid } from "date-fns";
 
@@ -14,7 +13,7 @@ export default function ClientList() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
-  const [filters, setFilters] = useState<ClientFilters>({
+  const [filters, setFilters] = useState<ClientFiltersType>({
     ageGroup: null,
     pipelineStage: null,
     policyType: null,

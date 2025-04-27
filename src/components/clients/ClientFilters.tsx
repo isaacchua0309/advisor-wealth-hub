@@ -19,24 +19,14 @@ import {
 } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Filter, X } from "lucide-react";
-import type { Client } from "@/types/client";
+import type { Client, ClientFilters } from "@/types/client";
 import type { Policy } from "@/types/policy";
 
 interface ClientFiltersProps {
   searchQuery: string;
   onSearchChange: (value: string) => void;
-  filters: {
-    ageGroup: string | null;
-    pipelineStage: Client['pipeline_stage'] | null;
-    minValue: number;
-    maxValue: number;
-  };
-  onFilterChange: (filters: {
-    ageGroup: string | null;
-    pipelineStage: Client['pipeline_stage'] | null;
-    minValue: number;
-    maxValue: number;
-  }) => void;
+  filters: ClientFilters;
+  onFilterChange: (filters: ClientFilters) => void;
   policyMap: Record<string, Policy[]>;
   isExpanded?: boolean;
   onToggleExpand?: () => void;

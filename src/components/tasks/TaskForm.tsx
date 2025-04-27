@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +37,7 @@ export function TaskForm({ initialTask, onSubmit, isSubmitting = false }: TaskFo
     onSubmit({
       ...task,
       due_date: task.due_date.toISOString(),
+      created_at: new Date().toISOString(),
     });
   };
 
