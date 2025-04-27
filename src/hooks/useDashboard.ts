@@ -178,6 +178,203 @@ export function useDashboard() {
     },
   });
 
+  // NEW: Fetch pending commissions (upcoming FYC / Renewals)
+  const { data: pendingCommissions, isLoading: isLoadingPendingCommissions } = useQuery({
+    queryKey: ["pendingCommissions"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("policies")
+        .select("start_date, first_year_commission, annual_ongoing_commission, policy_duration, status");
+      
+      if (error) throw error;
+      
+      let pendingAmount = 0;
+      
+      data.forEach(policy => {
+        // Only consider active policies
+        if (policy.status !== "active" || !policy.start_date) {
+          return;
+        }
+        
+        const startDate = new Date(policy.start_date);
+        const policyYears = calculateYearsSince(startDate, currentDate);
+        const yearFraction = calculateYearFraction(startDate, currentDate);
+        
+        // First year commission that's pending (for policies in their first year)
+        if (policyYears === 0 && policy.first_year_commission) {
+          pendingAmount += policy.first_year_commission;
+        }
+        
+        // Ongoing commission that will be paid this year but hasn't been paid yet
+        // Check if we're in a renewal year but haven't hit the renewal date yet
+        if (policy.annual_ongoing_commission && policyYears >= 1) {
+          const renewalMonth = startDate.getMonth();
+          const renewalDay = startDate.getDate();
+          
+          // If current date is before the renewal date this year, count it as pending
+          if (
+            (currentMonth < renewalMonth) || 
+            (currentMonth === renewalMonth && currentDay < renewalDay)
+          ) {
+            // Check if we haven't exceeded the policy duration or the max years
+            const maxOngoingYears = 5;
+            const policyRemainingYears = policy.policy_duration ? policy.policy_duration - 1 : Infinity;
+            
+            if (policyYears <= Math.min(maxOngoingYears, policyRemainingYears)) {
+              pendingAmount += policy.annual_ongoing_commission;
+            }
+          }
+        }
+      });
+      
+      return pendingAmount;
+    },
+  });
+
+  // Helper function to calculate partial year fraction
+  function calculateYearFraction(startDate, currentDate) {
+    const totalDays = 365;
+    const startTime = startDate.getTime();
+    const currentTime = currentDate.getTime();
+    const diffDays = Math.floor((currentTime - startTime) / (1000 * 60 * 60 * 24));
+    return (diffDays % totalDays) / totalDays;
+  }
+
+  // NEW: Fetch projected income for next 12 months
+  const { data: projectedIncome, isLoading: isLoadingProjectedIncome } = useQuery({
+    queryKey: ["projectedIncome"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("policies")
+        .select("start_date, first_year_commission, annual_ongoing_commission, policy_duration, status");
+      
+      if (error) throw error;
+      
+      let projectedTotal = 0;
+      const projectionDate = new Date();
+      projectionDate.setFullYear(projectionDate.getFullYear() + 1); // 12 months from now
+      
+      data.forEach(policy => {
+        // Only consider active policies
+        if (policy.status !== "active" || !policy.start_date) {
+          return;
+        }
+        
+        const startDate = new Date(policy.start_date);
+        
+        // Current policy year
+        const currentPolicyYears = calculateYearsSince(startDate, currentDate);
+        
+        // What policy year will we be in at the projection date
+        const projectedPolicyYears = calculateYearsSince(startDate, projectionDate);
+        
+        // If we will cross a policy anniversary within the next 12 months
+        if (projectedPolicyYears > currentPolicyYears) {
+          // Check if we're currently in year 0 (will get first year commission)
+          if (currentPolicyYears === 0 && policy.first_year_commission) {
+            projectedTotal += policy.first_year_commission;
+          }
+          // Otherwise we'll get ongoing commission
+          else if (policy.annual_ongoing_commission) {
+            const nextPolicyYear = currentPolicyYears + 1;
+            const maxOngoingYears = 5;
+            const policyRemainingYears = policy.policy_duration ? policy.policy_duration - 1 : Infinity;
+            
+            // Only count if we haven't exceeded the policy duration or max years
+            if (nextPolicyYear <= Math.min(maxOngoingYears, policyRemainingYears)) {
+              projectedTotal += policy.annual_ongoing_commission;
+            }
+          }
+        }
+      });
+      
+      return projectedTotal;
+    },
+  });
+
+  // NEW: Fetch year to date commission
+  const { data: yearToDateCommission, isLoading: isLoadingYtdCommission } = useQuery({
+    queryKey: ["yearToDateCommission"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("policies")
+        .select("start_date, first_year_commission, annual_ongoing_commission, policy_duration, status");
+      
+      if (error) throw error;
+      
+      let ytdTotal = 0;
+      const startOfYear = new Date(currentYear, 0, 1);
+      
+      data.forEach(policy => {
+        // Only consider active policies
+        if (policy.status !== "active" || !policy.start_date) {
+          return;
+        }
+        
+        const startDate = new Date(policy.start_date);
+        
+        // If the policy started this year, add first year commission
+        if (
+          startDate.getFullYear() === currentYear && 
+          policy.first_year_commission
+        ) {
+          ytdTotal += policy.first_year_commission;
+        }
+        
+        // Check for ongoing commissions that were paid this year
+        if (policy.annual_ongoing_commission) {
+          const policyYears = calculateYearsSince(startDate, currentDate);
+          
+          // Skip first year (that's handled by first_year_commission)
+          if (policyYears >= 1) {
+            const renewalDate = new Date(startDate);
+            renewalDate.setFullYear(currentYear);
+            
+            // If renewal date has passed this year, add the ongoing commission
+            if (renewalDate <= currentDate && renewalDate >= startOfYear) {
+              const maxOngoingYears = 5;
+              const policyRemainingYears = policy.policy_duration ? policy.policy_duration - 1 : Infinity;
+              const currentOngoingYear = policyYears; // This is the "ongoing year" (1-based)
+              
+              // Only count if we haven't exceeded the policy duration or max years
+              if (currentOngoingYear <= Math.min(maxOngoingYears, policyRemainingYears)) {
+                ytdTotal += policy.annual_ongoing_commission;
+              }
+            }
+          }
+        }
+      });
+      
+      return ytdTotal;
+    },
+  });
+
+  // NEW: Fetch upcoming renewals
+  const { data: upcomingRenewals, isLoading: isLoadingRenewals } = useQuery({
+    queryKey: ["upcomingRenewals"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("policies")
+        .select("start_date, end_date, status");
+      
+      if (error) throw error;
+      
+      // Look 30 days into the future
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 30);
+      
+      // Count policies with end dates in the next 30 days
+      return data.filter(policy => {
+        if (policy.status !== "active" || !policy.end_date) {
+          return false;
+        }
+        
+        const endDate = new Date(policy.end_date);
+        return endDate >= currentDate && endDate <= futureDate;
+      }).length;
+    },
+  });
+
   // Fetch deal pipeline data
   const { data: pipelineData, isLoading: isLoadingPipeline } = useQuery({
     queryKey: ["pipelineData"],
@@ -204,6 +401,16 @@ export function useDashboard() {
       });
 
       return stages;
+    },
+  });
+
+  // NEW: Fetch commission goal (default to $10,000 if not set)
+  const { data: commissionGoal, isLoading: isLoadingCommissionGoal } = useQuery({
+    queryKey: ["commissionGoal"],
+    queryFn: async () => {
+      // In a real app, you'd fetch this from the user's settings
+      // For now, we'll return a default value
+      return 10000; // $10,000 default goal
     },
   });
 
@@ -234,7 +441,7 @@ export function useDashboard() {
         .from("clients")
         .select("id, name")
         .order("created_at", { ascending: false })
-        .limit(4);
+        .limit(5);
 
       if (clientsError) throw clientsError;
 
@@ -268,7 +475,12 @@ export function useDashboard() {
     isLoadingAnnual || 
     isLoadingPipeline || 
     isLoadingUpcoming || 
-    isLoadingRecentClients;
+    isLoadingRecentClients ||
+    isLoadingPendingCommissions ||
+    isLoadingProjectedIncome ||
+    isLoadingYtdCommission ||
+    isLoadingRenewals ||
+    isLoadingCommissionGoal;
 
   return {
     totalCommission,
@@ -279,6 +491,11 @@ export function useDashboard() {
     pipelineData,
     upcomingTasks,
     recentClients,
+    pendingCommissions,
+    projectedIncome,
+    yearToDateCommission,
+    upcomingRenewals,
+    commissionGoal,
     isLoading,
   };
 }

@@ -14,6 +14,7 @@ import {
   Settings,
   CheckSquare,
   ClipboardList,
+  PlusCircle
 } from "lucide-react";
 
 export default function DashboardLayout() {
@@ -85,7 +86,7 @@ export default function DashboardLayout() {
         <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-6">
           <SidebarTrigger />
         </header>
-        <main className="grid flex-1 items-start gap-4 p-6 md:gap-8">
+        <main className="grid flex-1 items-start gap-4 p-4 md:p-6">
           <div className="w-full max-w-[1600px] mx-auto">
             <Outlet />
           </div>

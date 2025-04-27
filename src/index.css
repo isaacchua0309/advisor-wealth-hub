@@ -189,4 +189,17 @@
   .dashboard-card {
     @apply p-4 md:p-6 bg-card rounded-lg border shadow-sm h-full;
   }
+
+  /* Stats cards */
+  .stats-card {
+    @apply p-4;
+  }
+
+  .stats-label {
+    @apply text-xs text-muted-foreground font-medium;
+  }
+
+  .stats-value {
+    @apply text-2xl font-bold;
+  }
 }
