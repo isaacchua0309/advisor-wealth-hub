@@ -63,14 +63,6 @@ export default function CommissionProjectionChart({
       onYearSelect(yearClicked);
     }
   };
-
-  // Custom bar fill color function - fixed to return a string instead of a function
-  const getBarColor = (entry: any) => {
-    if (entry.isSelected) {
-      return "#047857";
-    }
-    return "var(--color-commission)";
-  };
   
   // Check for mobile screens
   useEffect(() => {
@@ -131,19 +123,20 @@ export default function CommissionProjectionChart({
                 <Bar 
                   dataKey="commission" 
                   name="Annual Commission" 
-                  fill="#10b981" // Default color
                   fillOpacity={0.9}
                   className="cursor-pointer"
                   radius={[4, 4, 0, 0]}
                   // Dynamic bar width based on number of data points and screen size
                   maxBarSize={isMobile ? 20 : (commissionData.length > 6 ? 40 : 60)}
                   cursor={onYearSelect ? "pointer" : undefined}
-                  // Use fill prop (fixed string) instead of fillFunction for each bar
-                  fill="#10b981"
-                  // Apply custom logic for selected bars using style function
-                  style={(entry) => ({
-                    fill: entry.isSelected ? "#047857" : "var(--color-commission)"
-                  })}
+                  // Use fill with conditional logic based on selection state
+                  fill="var(--color-commission)"
+                  // Apply styles using a function that returns the proper format expected by recharts
+                  style={(entry) => {
+                    return entry.isSelected 
+                      ? { fill: "#047857" } 
+                      : { fill: "var(--color-commission)" };
+                  }}
                 />
               </BarChart>
             </ResponsiveContainer>
