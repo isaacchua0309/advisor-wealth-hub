@@ -49,7 +49,15 @@ const passwordFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 
-export function AccountSettings() {
+interface AccountSettingsProps {
+  showProfileSection?: boolean;
+  showSecuritySection?: boolean;
+}
+
+export function AccountSettings({ 
+  showProfileSection = true,
+  showSecuritySection = true,
+}: AccountSettingsProps) {
   const { toast } = useToast();
   const { user } = useAuth();
   const [isUpdating, setIsUpdating] = useState(false);
@@ -175,224 +183,228 @@ export function AccountSettings() {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <User className="mr-2 h-5 w-5" /> Profile Information
-          </CardTitle>
-          <CardDescription>
-            Update your personal information and how we can contact you
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-6 flex flex-col items-center sm:flex-row sm:items-start gap-4">
-            <div className="relative">
-              <Avatar className="h-24 w-24">
-                <AvatarImage 
-                  src={avatarUrl || user?.user_metadata?.avatar_url} 
-                  alt={user?.user_metadata?.full_name || "User"} 
-                />
-                <AvatarFallback className="text-lg bg-primary text-primary-foreground">
-                  {user?.user_metadata?.full_name ? getInitials(user.user_metadata.full_name) : 'U'}
-                </AvatarFallback>
-              </Avatar>
-              <div className="mt-2">
-                <Label htmlFor="avatar" className="block text-sm text-center cursor-pointer text-primary">
-                  Change Picture
-                </Label>
-                <Input
-                  id="avatar"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleAvatarUpload}
-                />
+      {showProfileSection && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <User className="mr-2 h-5 w-5" /> Profile Information
+            </CardTitle>
+            <CardDescription>
+              Update your personal information and how we can contact you
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-6 flex flex-col items-center sm:flex-row sm:items-start gap-4">
+              <div className="relative">
+                <Avatar className="h-24 w-24">
+                  <AvatarImage 
+                    src={avatarUrl || user?.user_metadata?.avatar_url} 
+                    alt={user?.user_metadata?.full_name || "User"} 
+                  />
+                  <AvatarFallback className="text-lg bg-primary text-primary-foreground">
+                    {user?.user_metadata?.full_name ? getInitials(user.user_metadata.full_name) : 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="mt-2">
+                  <Label htmlFor="avatar" className="block text-sm text-center cursor-pointer text-primary">
+                    Change Picture
+                  </Label>
+                  <Input
+                    id="avatar"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarUpload}
+                  />
+                </div>
+              </div>
+              
+              <div className="w-full">
+                <Form {...profileForm}>
+                  <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4">
+                    <FormField
+                      control={profileForm.control}
+                      name="fullName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center">
+                            Full Name
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <HelpCircle className="ml-1 h-4 w-4 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Your full name as you'd like it displayed</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </FormLabel>
+                          <FormControl>
+                            <Input placeholder="John Doe" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={profileForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center">
+                            Email
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <HelpCircle className="ml-1 h-4 w-4 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>The email address used for communication and login</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </FormLabel>
+                          <FormControl>
+                            <Input type="email" placeholder="john@example.com" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            You'll need to verify your email if you change it
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={profileForm.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone Number</FormLabel>
+                          <FormControl>
+                            <Input placeholder="+1 (555) 123-4567" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={profileForm.control}
+                      name="language"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center">
+                            Language
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <HelpCircle className="ml-1 h-4 w-4 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Your preferred language for the application</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a language" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="en">English</SelectItem>
+                              <SelectItem value="es">Spanish</SelectItem>
+                              <SelectItem value="fr">French</SelectItem>
+                              <SelectItem value="de">German</SelectItem>
+                              <SelectItem value="zh">Chinese</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <Button type="submit" className="mt-4" disabled={isUpdating}>
+                      {isUpdating ? "Updating..." : "Update Profile"}
+                    </Button>
+                  </form>
+                </Form>
               </div>
             </div>
-            
-            <div className="w-full">
-              <Form {...profileForm}>
-                <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4">
-                  <FormField
-                    control={profileForm.control}
-                    name="fullName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center">
-                          Full Name
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <HelpCircle className="ml-1 h-4 w-4 text-muted-foreground" />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Your full name as you'd like it displayed</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </FormLabel>
-                        <FormControl>
-                          <Input placeholder="John Doe" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={profileForm.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center">
-                          Email
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <HelpCircle className="ml-1 h-4 w-4 text-muted-foreground" />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>The email address used for communication and login</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </FormLabel>
-                        <FormControl>
-                          <Input type="email" placeholder="john@example.com" {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          You'll need to verify your email if you change it
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={profileForm.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Phone Number</FormLabel>
-                        <FormControl>
-                          <Input placeholder="+1 (555) 123-4567" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={profileForm.control}
-                    name="language"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center">
-                          Language
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <HelpCircle className="ml-1 h-4 w-4 text-muted-foreground" />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Your preferred language for the application</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a language" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="en">English</SelectItem>
-                            <SelectItem value="es">Spanish</SelectItem>
-                            <SelectItem value="fr">French</SelectItem>
-                            <SelectItem value="de">German</SelectItem>
-                            <SelectItem value="zh">Chinese</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <Button type="submit" className="mt-4" disabled={isUpdating}>
-                    {isUpdating ? "Updating..." : "Update Profile"}
-                  </Button>
-                </form>
-              </Form>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Lock className="mr-2 h-5 w-5" /> Security
-          </CardTitle>
-          <CardDescription>
-            Change your password and security settings
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...passwordForm}>
-            <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
-              <FormField
-                control={passwordForm.control}
-                name="currentPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Current Password</FormLabel>
-                    <FormControl>
-                      <Input type="password" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={passwordForm.control}
-                name="newPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>New Password</FormLabel>
-                    <FormControl>
-                      <Input type="password" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Password must be at least 6 characters
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={passwordForm.control}
-                name="confirmPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Confirm New Password</FormLabel>
-                    <FormControl>
-                      <Input type="password" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <Button type="submit" variant="outline" disabled={isChangingPassword}>
-                {isChangingPassword ? "Updating..." : "Change Password"}
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+      {showSecuritySection && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Lock className="mr-2 h-5 w-5" /> Security
+            </CardTitle>
+            <CardDescription>
+              Change your password and security settings
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...passwordForm}>
+              <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
+                <FormField
+                  control={passwordForm.control}
+                  name="currentPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Current Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={passwordForm.control}
+                  name="newPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>New Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Password must be at least 6 characters
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={passwordForm.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm New Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <Button type="submit" variant="outline" disabled={isChangingPassword}>
+                  {isChangingPassword ? "Updating..." : "Change Password"}
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
