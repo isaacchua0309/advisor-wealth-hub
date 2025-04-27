@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   Dialog,
@@ -42,7 +43,9 @@ const formSchema = z.object({
     message: "Please select a policy type.",
   }),
   policy_number: z.string().optional(),
-  provider: z.string().optional(),
+  provider: z.string().min(1, {
+    message: "Provider is required."
+  }),
   premium: z.number({
     required_error: "Premium is required",
     invalid_type_error: "Premium must be a number",
@@ -100,7 +103,7 @@ const formSchema = z.object({
 }).refine((data) => {
   if (data.start_date && data.end_date) {
     const duration = differenceInYears(new Date(data.end_date), new Date(data.start_date));
-    return data.policy_duration === duration;
+    return data.policy_duration === duration || data.policy_duration === null;
   }
   return true;
 }, {
@@ -114,7 +117,7 @@ interface EditPolicyDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPolicyDialogProps) {
+export function EditPolicyDialog({ policy, open, onOpenChange }: EditPolicyDialogProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { updatePolicy, deletePolicy } = useClients();
@@ -145,6 +148,7 @@ export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPol
       annual_ongoing_commission: policy.annual_ongoing_commission || null,
       global_policy_id: policy.global_policy_id || null,
     },
+    mode: "onChange"
   });
 
   const { getValidation, isFieldDisabled } = usePolicyForm(form);
@@ -296,7 +300,7 @@ export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPol
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="policy_name">Policy Name</Label>
+                  <Label htmlFor="policy_name">Policy Name *</Label>
                   <Controller
                     name="policy_name"
                     control={control}
@@ -307,6 +311,7 @@ export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPol
                         {...field}
                         value={field.value || ""}
                         onChange={(e) => field.onChange(e.target.value)}
+                        className={errors.policy_name ? "border-red-500" : ""}
                       />
                     )}
                   />
@@ -315,13 +320,13 @@ export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPol
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="policy_type">Policy Type</Label>
+                  <Label htmlFor="policy_type">Policy Type *</Label>
                   <Controller
                     name="policy_type"
                     control={control}
                     render={({ field }) => (
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <SelectTrigger>
+                        <SelectTrigger className={errors.policy_type ? "border-red-500" : ""}>
                           <SelectValue placeholder="Select a type" />
                         </SelectTrigger>
                         <SelectContent>
@@ -358,7 +363,7 @@ export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPol
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="provider">Provider</Label>
+                  <Label htmlFor="provider">Provider *</Label>
                   <Controller
                     name="provider"
                     control={control}
@@ -369,12 +374,16 @@ export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPol
                         {...field}
                         value={field.value || ""}
                         onChange={(e) => field.onChange(e.target.value)}
+                        className={errors.provider ? "border-red-500" : ""}
                       />
                     )}
                   />
+                  {errors.provider && (
+                    <p className="text-sm text-red-500">{errors.provider.message}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="premium">Premium</Label>
+                  <Label htmlFor="premium">Premium ($) *</Label>
                   <Controller
                     name="premium"
                     control={control}
@@ -386,12 +395,16 @@ export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPol
                         {...field}
                         value={field.value === null ? "" : field.value}
                         onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
+                        className={errors.premium ? "border-red-500" : ""}
                       />
                     )}
                   />
+                  {errors.premium && (
+                    <p className="text-sm text-red-500">{errors.premium.message}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="value">Value</Label>
+                  <Label htmlFor="value">Value ($) *</Label>
                   <Controller
                     name="value"
                     control={control}
@@ -403,12 +416,16 @@ export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPol
                         {...field}
                         value={field.value === null ? "" : field.value}
                         onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
+                        className={errors.value ? "border-red-500" : ""}
                       />
                     )}
                   />
+                  {errors.value && (
+                    <p className="text-sm text-red-500">{errors.value.message}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="sum_invested">Sum Invested</Label>
+                  <Label htmlFor="sum_invested">Sum Invested ($)</Label>
                   <Controller
                     name="sum_invested"
                     control={control}
@@ -425,7 +442,7 @@ export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPol
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="start_date">Start Date</Label>
+                  <Label htmlFor="start_date">Start Date *</Label>
                   <Controller
                     name="start_date"
                     control={control}
@@ -437,12 +454,16 @@ export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPol
                         {...field}
                         value={field.value || ""}
                         onChange={(e) => field.onChange(e.target.value)}
+                        className={errors.start_date ? "border-red-500" : ""}
                       />
                     )}
                   />
+                  {errors.start_date && (
+                    <p className="text-sm text-red-500">{errors.start_date.message}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="end_date">End Date</Label>
+                  <Label htmlFor="end_date">End Date *</Label>
                   <Controller
                     name="end_date"
                     control={control}
@@ -454,9 +475,13 @@ export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPol
                         {...field}
                         value={field.value || ""}
                         onChange={(e) => field.onChange(e.target.value)}
+                        className={errors.end_date ? "border-red-500" : ""}
                       />
                     )}
                   />
+                  {errors.end_date && (
+                    <p className="text-sm text-red-500">{errors.end_date.message}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="status">Status</Label>
@@ -464,7 +489,7 @@ export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPol
                     name="status"
                     control={control}
                     render={({ field }) => (
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a status" />
                         </SelectTrigger>
@@ -479,13 +504,13 @@ export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPol
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="payment_structure_type">Payment Structure Type</Label>
+                  <Label htmlFor="payment_structure_type">Payment Structure Type *</Label>
                   <Controller
                     name="payment_structure_type"
                     control={control}
                     render={({ field }) => (
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <SelectTrigger>
+                        <SelectTrigger className={errors.payment_structure_type ? "border-red-500" : ""}>
                           <SelectValue placeholder="Select a payment structure" />
                         </SelectTrigger>
                         <SelectContent>
@@ -521,7 +546,7 @@ export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPol
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="premium">Premium</Label>
+                  <Label htmlFor="premium">Premium ($) *</Label>
                   <Controller
                     name="premium"
                     control={control}
@@ -533,12 +558,16 @@ export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPol
                         {...field}
                         value={field.value === null ? "" : field.value}
                         onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
+                        className={errors.premium ? "border-red-500" : ""}
                       />
                     )}
                   />
+                  {errors.premium && (
+                    <p className="text-sm text-red-500">{errors.premium.message}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="value">Value</Label>
+                  <Label htmlFor="value">Value ($) *</Label>
                   <Controller
                     name="value"
                     control={control}
@@ -550,12 +579,16 @@ export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPol
                         {...field}
                         value={field.value === null ? "" : field.value}
                         onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
+                        className={errors.value ? "border-red-500" : ""}
                       />
                     )}
                   />
+                  {errors.value && (
+                    <p className="text-sm text-red-500">{errors.value.message}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="sum_invested">Sum Invested</Label>
+                  <Label htmlFor="sum_invested">Sum Invested ($)</Label>
                   <Controller
                     name="sum_invested"
                     control={control}
@@ -572,7 +605,7 @@ export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPol
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="start_date">Start Date</Label>
+                  <Label htmlFor="start_date">Start Date *</Label>
                   <Controller
                     name="start_date"
                     control={control}
@@ -584,12 +617,16 @@ export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPol
                         {...field}
                         value={field.value || ""}
                         onChange={(e) => field.onChange(e.target.value)}
+                        className={errors.start_date ? "border-red-500" : ""}
                       />
                     )}
                   />
+                  {errors.start_date && (
+                    <p className="text-sm text-red-500">{errors.start_date.message}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="end_date">End Date</Label>
+                  <Label htmlFor="end_date">End Date *</Label>
                   <Controller
                     name="end_date"
                     control={control}
@@ -601,9 +638,13 @@ export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPol
                         {...field}
                         value={field.value || ""}
                         onChange={(e) => field.onChange(e.target.value)}
+                        className={errors.end_date ? "border-red-500" : ""}
                       />
                     )}
                   />
+                  {errors.end_date && (
+                    <p className="text-sm text-red-500">{errors.end_date.message}</p>
+                  )}
                 </div>
               </CollapsibleContent>
             </Collapsible>
@@ -624,7 +665,7 @@ export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPol
               <CollapsibleContent>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="commission_rate">First Year Commission Rate (%)</Label>
+                    <Label htmlFor="commission_rate">First Year Commission Rate (%) *</Label>
                     <Controller
                       name="commission_rate"
                       control={control}
@@ -636,9 +677,13 @@ export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPol
                           {...field}
                           value={field.value === null ? "" : field.value}
                           onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
+                          className={errors.commission_rate ? "border-red-500" : ""}
                         />
                       )}
                     />
+                    {errors.commission_rate && (
+                      <p className="text-sm text-red-500">{errors.commission_rate.message}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="first_year_commission">First Year Commission ($)</Label>
@@ -671,9 +716,13 @@ export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPol
                           {...field}
                           value={field.value === null ? "" : field.value}
                           onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
+                          className={errors.ongoing_commission_rate ? "border-red-500" : ""}
                         />
                       )}
                     />
+                    {errors.ongoing_commission_rate && (
+                      <p className="text-sm text-red-500">{errors.ongoing_commission_rate.message}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="annual_ongoing_commission">Annual Ongoing Commission ($)</Label>
@@ -706,9 +755,13 @@ export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPol
                           {...field}
                           value={field.value === null ? "" : field.value}
                           onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
+                          className={errors.commission_duration ? "border-red-500" : ""}
                         />
                       )}
                     />
+                    {errors.commission_duration && (
+                      <p className="text-sm text-red-500">{errors.commission_duration.message}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="policy_duration">Policy Duration (Years)</Label>
@@ -723,9 +776,13 @@ export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPol
                           {...field}
                           value={field.value === null ? "" : field.value}
                           onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
+                          className={errors.policy_duration ? "border-red-500" : ""}
                         />
                       )}
                     />
+                    {errors.policy_duration && (
+                      <p className="text-sm text-red-500">{errors.policy_duration.message}</p>
+                    )}
                   </div>
                 </div>
               </CollapsibleContent>
@@ -752,7 +809,7 @@ export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPol
           </Button>
           <Button 
             type="submit"
-            disabled={!form.formState.isValid}
+            disabled={!isValid || Object.keys(errors).length > 0}
             onClick={handleSubmit(onSubmit)}
           >
             Save Changes
@@ -762,3 +819,6 @@ export default function EditPolicyDialog({ policy, open, onOpenChange }: EditPol
     </Dialog>
   );
 }
+
+// Export as default as well to maintain compatibility
+export default EditPolicyDialog;

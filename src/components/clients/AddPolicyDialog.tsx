@@ -36,6 +36,7 @@ import { useClients } from "@/hooks/useClients";
 import type { CreatePolicyInput } from "@/types/policy";
 import { HelpCircle } from "lucide-react";
 import { useGlobalPolicies } from "@/hooks/useGlobalPolicies";
+import { usePolicyForm } from "@/hooks/usePolicyForm";
 
 interface AddPolicyDialogProps {
   open: boolean;
@@ -68,8 +69,11 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
       annual_ongoing_commission: undefined,
       policy_duration: undefined,
       global_policy_id: undefined
-    }
+    },
+    mode: 'onChange'
   });
+
+  const { getValidation } = usePolicyForm(form as any);
 
   const watchPremium = form.watch('premium');
   const watchCommissionRate = form.watch('commission_rate');
@@ -83,14 +87,14 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
       if (globalPolicy) {
         // Auto-fill fields from the selected global policy
         form.setValue('global_policy_id', globalPolicy.id);
-        form.setValue('policy_name', globalPolicy.policy_name);
-        form.setValue('policy_type', globalPolicy.policy_type);
-        form.setValue('provider', globalPolicy.provider || undefined);
-        form.setValue('payment_structure_type', globalPolicy.payment_structure_type as any || 'regular_premium');
-        form.setValue('commission_rate', globalPolicy.first_year_commission_rate || undefined);
-        form.setValue('ongoing_commission_rate', globalPolicy.ongoing_commission_rate || undefined);
-        form.setValue('commission_duration', globalPolicy.commission_duration || undefined);
-        form.setValue('policy_duration', globalPolicy.policy_duration || undefined);
+        form.setValue('policy_name', globalPolicy.policy_name, { shouldValidate: true });
+        form.setValue('policy_type', globalPolicy.policy_type, { shouldValidate: true });
+        form.setValue('provider', globalPolicy.provider || undefined, { shouldValidate: true });
+        form.setValue('payment_structure_type', globalPolicy.payment_structure_type as any || 'regular_premium', { shouldValidate: true });
+        form.setValue('commission_rate', globalPolicy.first_year_commission_rate || undefined, { shouldValidate: true });
+        form.setValue('ongoing_commission_rate', globalPolicy.ongoing_commission_rate || undefined, { shouldValidate: true });
+        form.setValue('commission_duration', globalPolicy.commission_duration || undefined, { shouldValidate: true });
+        form.setValue('policy_duration', globalPolicy.policy_duration || undefined, { shouldValidate: true });
       }
     }
   }, [selectedGlobalPolicy, globalPolicies, form]);
@@ -102,7 +106,7 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
       
       // Make sure first year commission doesn't exceed total commission
       if (watchFirstYearCommission > totalCommission) {
-        form.setValue('first_year_commission', totalCommission);
+        form.setValue('first_year_commission', totalCommission, { shouldValidate: true });
       }
       
       // Calculate ongoing commission
@@ -129,7 +133,7 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
       }
       
       setCalculatedOngoingCommission(ongoingCommission);
-      form.setValue('annual_ongoing_commission', ongoingCommission);
+      form.setValue('annual_ongoing_commission', ongoingCommission, { shouldValidate: true });
     }
   }, [watchPremium, watchCommissionRate, watchFirstYearCommission, watchPaymentStructure, form]);
 
@@ -137,7 +141,7 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
   useEffect(() => {
     if (watchPremium && watchCommissionRate) {
       const firstYearCommission = watchPremium * (watchCommissionRate / 100);
-      form.setValue('first_year_commission', firstYearCommission);
+      form.setValue('first_year_commission', firstYearCommission, { shouldValidate: true });
     }
   }, [watchPremium, watchCommissionRate, form]);
 
@@ -160,26 +164,26 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
     setSelectedGlobalPolicy("none");
     form.setValue('global_policy_id', undefined);
     // Reset fields that were auto-filled
-    form.setValue('policy_name', "");
-    form.setValue('policy_type', "");
-    form.setValue('provider', "");
-    form.setValue('payment_structure_type', 'regular_premium');
-    form.setValue('commission_rate', undefined);
-    form.setValue('ongoing_commission_rate', undefined);
-    form.setValue('commission_duration', undefined);
-    form.setValue('policy_duration', undefined);
+    form.setValue('policy_name', "", { shouldValidate: true });
+    form.setValue('policy_type', "", { shouldValidate: true });
+    form.setValue('provider', "", { shouldValidate: true });
+    form.setValue('payment_structure_type', 'regular_premium', { shouldValidate: true });
+    form.setValue('commission_rate', undefined, { shouldValidate: true });
+    form.setValue('ongoing_commission_rate', undefined, { shouldValidate: true });
+    form.setValue('commission_duration', undefined, { shouldValidate: true });
+    form.setValue('policy_duration', undefined, { shouldValidate: true });
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader className="sticky top-0 z-10 bg-background pb-4 border-b">
           <DialogTitle>Add New Policy</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
-            <div className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
+            <div className="space-y-4 py-2 overflow-y-auto flex-grow px-1">
               {/* New Global Policy Selector */}
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
@@ -234,14 +238,15 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
                 <FormField
                   control={form.control}
                   name="policy_name"
-                  render={({ field }) => (
+                  rules={getValidation('policy_name')}
+                  render={({ field, formState }) => (
                     <FormItem>
-                      <FormLabel>Policy Name</FormLabel>
+                      <FormLabel>Policy Name *</FormLabel>
                       <FormControl>
                         <Input 
                           placeholder="Policy Name" 
                           {...field} 
-                          className={selectedGlobalPolicy !== "none" ? "bg-muted" : ""}
+                          className={`${selectedGlobalPolicy !== "none" ? "bg-muted" : ""} ${formState.errors.policy_name ? "border-red-500" : ""}`}
                         />
                       </FormControl>
                       <FormMessage />
@@ -252,15 +257,16 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
                 <FormField
                   control={form.control}
                   name="policy_type"
-                  render={({ field }) => (
+                  rules={getValidation('policy_type')}
+                  render={({ field, formState }) => (
                     <FormItem>
-                      <FormLabel>Policy Type</FormLabel>
+                      <FormLabel>Policy Type *</FormLabel>
                       <Select 
                         onValueChange={field.onChange} 
-                        value={field.value}
+                        value={field.value || ""}
                       >
                         <FormControl>
-                          <SelectTrigger className={selectedGlobalPolicy !== "none" ? "bg-muted" : ""}>
+                          <SelectTrigger className={`${selectedGlobalPolicy !== "none" ? "bg-muted" : ""} ${formState.errors.policy_type ? "border-red-500" : ""}`}>
                             <SelectValue placeholder="Select type" />
                           </SelectTrigger>
                         </FormControl>
@@ -283,15 +289,16 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
                 <FormField
                   control={form.control}
                   name="provider"
-                  render={({ field }) => (
+                  rules={getValidation('provider')}
+                  render={({ field, formState }) => (
                     <FormItem>
-                      <FormLabel>Provider/Insurer</FormLabel>
+                      <FormLabel>Provider/Insurer *</FormLabel>
                       <FormControl>
                         <Input 
                           placeholder="Insurance provider" 
                           {...field} 
                           value={field.value || ""} 
-                          className={selectedGlobalPolicy !== "none" ? "bg-muted" : ""}
+                          className={`${selectedGlobalPolicy !== "none" ? "bg-muted" : ""} ${formState.errors.provider ? "border-red-500" : ""}`}
                         />
                       </FormControl>
                       <FormMessage />
@@ -316,9 +323,10 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
                 <FormField
                   control={form.control}
                   name="premium"
-                  render={({ field: { onChange, ...restField } }) => (
+                  rules={getValidation('premium')}
+                  render={({ field: { onChange, ...restField }, formState }) => (
                     <FormItem>
-                      <FormLabel>Premium ($)</FormLabel>
+                      <FormLabel>Premium ($) *</FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 
@@ -326,6 +334,7 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
                           onChange={(e) => onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
                           {...restField}
                           value={restField.value === undefined ? "" : restField.value}
+                          className={formState.errors.premium ? "border-red-500" : ""}
                         />
                       </FormControl>
                       <FormMessage />
@@ -336,16 +345,18 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
                 <FormField
                   control={form.control}
                   name="value"
-                  render={({ field: { onChange, ...restField } }) => (
+                  rules={getValidation('value')}
+                  render={({ field: { onChange, ...restField }, formState }) => (
                     <FormItem>
-                      <FormLabel>Value/Sum Assured ($)</FormLabel>
+                      <FormLabel>Value/Sum Assured ($) *</FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 
                           placeholder="Policy value" 
                           onChange={(e) => onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
                           {...restField}
-                          value={restField.value === undefined ? "" : restField.value} 
+                          value={restField.value === undefined ? "" : restField.value}
+                          className={formState.errors.value ? "border-red-500" : ""}
                         />
                       </FormControl>
                       <FormMessage />
@@ -356,11 +367,17 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
                 <FormField
                   control={form.control}
                   name="start_date"
-                  render={({ field }) => (
+                  rules={getValidation('start_date')}
+                  render={({ field, formState }) => (
                     <FormItem>
-                      <FormLabel>Start Date</FormLabel>
+                      <FormLabel>Start Date *</FormLabel>
                       <FormControl>
-                        <Input type="date" {...field} value={field.value || ""} />
+                        <Input 
+                          type="date" 
+                          {...field} 
+                          value={field.value || ""} 
+                          className={formState.errors.start_date ? "border-red-500" : ""}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -370,11 +387,17 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
                 <FormField
                   control={form.control}
                   name="end_date"
-                  render={({ field }) => (
+                  rules={getValidation('end_date')}
+                  render={({ field, formState }) => (
                     <FormItem>
-                      <FormLabel>End Date</FormLabel>
+                      <FormLabel>End Date *</FormLabel>
                       <FormControl>
-                        <Input type="date" {...field} value={field.value || ""} />
+                        <Input 
+                          type="date" 
+                          {...field} 
+                          value={field.value || ""} 
+                          className={formState.errors.end_date ? "border-red-500" : ""}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -412,10 +435,11 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
                 <FormField
                   control={form.control}
                   name="payment_structure_type"
-                  render={({ field }) => (
+                  rules={getValidation('payment_structure_type')}
+                  render={({ field, formState }) => (
                     <FormItem>
                       <div className="flex items-center space-x-2">
-                        <FormLabel>Payment Structure</FormLabel>
+                        <FormLabel>Payment Structure *</FormLabel>
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -440,7 +464,7 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
                         value={field.value}
                       >
                         <FormControl>
-                          <SelectTrigger className={selectedGlobalPolicy !== "none" ? "bg-muted" : ""}>
+                          <SelectTrigger className={`${selectedGlobalPolicy !== "none" ? "bg-muted" : ""} ${formState.errors.payment_structure_type ? "border-red-500" : ""}`}>
                             <SelectValue placeholder="Select payment structure" />
                           </SelectTrigger>
                         </FormControl>
@@ -461,7 +485,8 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
                 <FormField
                   control={form.control}
                   name="policy_duration"
-                  render={({ field: { onChange, ...restField } }) => (
+                  rules={getValidation('policy_duration')}
+                  render={({ field: { onChange, ...restField }, formState }) => (
                     <FormItem>
                       <div className="flex items-center space-x-2">
                         <FormLabel>Policy Duration (years)</FormLabel>
@@ -483,7 +508,7 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
                           onChange={(e) => onChange(e.target.value ? parseInt(e.target.value) : undefined)}
                           {...restField}
                           value={restField.value === undefined ? "" : restField.value}
-                          className={selectedGlobalPolicy !== "none" ? "bg-muted" : ""}
+                          className={`${selectedGlobalPolicy !== "none" ? "bg-muted" : ""} ${formState.errors.policy_duration ? "border-red-500" : ""}`}
                         />
                       </FormControl>
                       <FormMessage />
@@ -494,10 +519,11 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
                 <FormField
                   control={form.control}
                   name="commission_rate"
-                  render={({ field: { onChange, ...restField } }) => (
+                  rules={getValidation('commission_rate')}
+                  render={({ field: { onChange, ...restField }, formState }) => (
                     <FormItem>
                       <div className="flex items-center space-x-2">
-                        <FormLabel>Commission Rate (%)</FormLabel>
+                        <FormLabel>Commission Rate (%) *</FormLabel>
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -516,7 +542,7 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
                           onChange={(e) => onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
                           {...restField}
                           value={restField.value === undefined ? "" : restField.value}
-                          className={selectedGlobalPolicy !== "none" ? "bg-muted" : ""}
+                          className={`${selectedGlobalPolicy !== "none" ? "bg-muted" : ""} ${formState.errors.commission_rate ? "border-red-500" : ""}`}
                         />
                       </FormControl>
                       <FormMessage />
@@ -610,7 +636,8 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
                 <FormField
                   control={form.control}
                   name="commission_duration"
-                  render={({ field: { onChange, ...restField } }) => (
+                  rules={getValidation('commission_duration')}
+                  render={({ field: { onChange, ...restField }, formState }) => (
                     <FormItem>
                       <div className="flex items-center space-x-2">
                         <FormLabel>Commission Duration (years)</FormLabel>
@@ -632,7 +659,7 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
                           onChange={(e) => onChange(e.target.value ? parseInt(e.target.value) : undefined)}
                           {...restField}
                           value={restField.value === undefined ? "" : restField.value}
-                          className={selectedGlobalPolicy !== "none" ? "bg-muted" : ""}
+                          className={`${selectedGlobalPolicy !== "none" ? "bg-muted" : ""} ${formState.errors.commission_duration ? "border-red-500" : ""}`}
                         />
                       </FormControl>
                       <FormMessage />
@@ -643,7 +670,8 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
                 <FormField
                   control={form.control}
                   name="ongoing_commission_rate"
-                  render={({ field: { onChange, ...restField } }) => (
+                  rules={getValidation('ongoing_commission_rate')}
+                  render={({ field: { onChange, ...restField }, formState }) => (
                     <FormItem>
                       <div className="flex items-center space-x-2">
                         <FormLabel>Ongoing Commission Rate (%)</FormLabel>
@@ -665,7 +693,7 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
                           onChange={(e) => onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
                           {...restField}
                           value={restField.value === undefined ? "" : restField.value}
-                          className={selectedGlobalPolicy !== "none" ? "bg-muted" : ""}
+                          className={`${selectedGlobalPolicy !== "none" ? "bg-muted" : ""} ${formState.errors.ongoing_commission_rate ? "border-red-500" : ""}`}
                         />
                       </FormControl>
                       <FormMessage />
@@ -675,7 +703,7 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
               </div>
             </div>
 
-            <DialogFooter className="pt-4">
+            <DialogFooter className="sticky bottom-0 z-10 bg-background pt-4 border-t mt-auto">
               <Button 
                 type="button" 
                 variant="outline" 
@@ -685,7 +713,7 @@ export function AddPolicyDialog({ open, onOpenChange, clientId }: AddPolicyDialo
               </Button>
               <Button 
                 type="submit" 
-                disabled={isSubmitting}
+                disabled={isSubmitting || !form.formState.isValid || Object.keys(form.formState.errors).length > 0}
               >
                 {isSubmitting ? "Adding..." : "Add Policy"}
               </Button>

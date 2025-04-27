@@ -1,3 +1,4 @@
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,10 +18,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import type { CreatePolicyInput, GlobalPolicy } from "@/types/policy";
 import { usePolicyForm } from "@/hooks/usePolicyForm";
 import { useGlobalPolicies } from "@/hooks/useGlobalPolicies";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage, Form } from "@/components/ui/form";
 
 interface PolicyFormGroupProps {
   policy: CreatePolicyInput;
@@ -32,7 +34,8 @@ interface PolicyFormGroupProps {
 export function PolicyFormGroup({ policy, onChange, onRemove, index }: PolicyFormGroupProps) {
   const [isOpen, setIsOpen] = useState(true);
   const form = useForm<CreatePolicyInput>({
-    defaultValues: policy
+    defaultValues: policy,
+    mode: 'onChange'
   });
   
   const { globalPolicies } = useGlobalPolicies();
@@ -43,14 +46,17 @@ export function PolicyFormGroup({ policy, onChange, onRemove, index }: PolicyFor
       ...policy,
       [field]: value
     });
+    
+    // Also update the form state for validation
+    form.setValue(field as any, value, { 
+      shouldValidate: true, 
+      shouldDirty: true 
+    });
   };
 
   const handleNumericChange = (field: string, value: string) => {
     const numValue = value === "" ? null : parseFloat(value);
-    onChange({
-      ...policy,
-      [field]: numValue
-    });
+    handleChange(field, numValue);
   };
 
   const handleGlobalPolicyChange = (globalPolicyId: string) => {
@@ -73,10 +79,18 @@ export function PolicyFormGroup({ policy, onChange, onRemove, index }: PolicyFor
           : null,
         annual_ongoing_commission: policy.premium && selectedPolicy.ongoing_commission_rate 
           ? (policy.premium * selectedPolicy.ongoing_commission_rate / 100) 
-          : null
+          : null,
+        payment_structure_type: selectedPolicy.payment_structure_type as any || 'regular_premium'
       };
       
       onChange(updatedPolicy);
+      
+      // Update form values for validation
+      Object.entries(updatedPolicy).forEach(([key, value]) => {
+        if (value !== undefined) {
+          form.setValue(key as any, value, { shouldValidate: true });
+        }
+      });
     }
   };
 
@@ -99,6 +113,15 @@ export function PolicyFormGroup({ policy, onChange, onRemove, index }: PolicyFor
       }
     }
   }, [policy.premium, policy.commission_rate, policy.ongoing_commission_rate]);
+
+  // Initialize form with policy values
+  useEffect(() => {
+    Object.entries(policy).forEach(([key, value]) => {
+      if (value !== undefined) {
+        form.setValue(key as any, value, { shouldValidate: true });
+      }
+    });
+  }, []);
 
   return (
     <Collapsible
@@ -153,45 +176,87 @@ export function PolicyFormGroup({ policy, onChange, onRemove, index }: PolicyFor
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor={`policy-name-${index}`}>Policy Name</Label>
-            <Input
-              id={`policy-name-${index}`}
-              placeholder="Policy Name"
-              value={policy.policy_name || ""}
-              onChange={(e) => handleChange("policy_name", e.target.value)}
-              required
+            <Label htmlFor={`policy-name-${index}`}>Policy Name *</Label>
+            <Controller
+              name="policy_name"
+              control={form.control}
+              rules={getValidation('policy_name')}
+              render={({ field, fieldState: { error } }) => (
+                <>
+                  <Input
+                    id={`policy-name-${index}`}
+                    placeholder="Policy Name"
+                    value={field.value || ""}
+                    onChange={(e) => {
+                      field.onChange(e.target.value);
+                      handleChange("policy_name", e.target.value);
+                    }}
+                    className={error ? "border-red-500" : ""}
+                    required
+                  />
+                  {error && <p className="text-red-500 text-xs">{error.message}</p>}
+                </>
+              )}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor={`policy-type-${index}`}>Policy Type</Label>
-            <Select
-              value={policy.policy_type || ""}
-              onValueChange={(value) => handleChange("policy_type", value)}
-            >
-              <SelectTrigger id={`policy-type-${index}`}>
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="life">Life Insurance</SelectItem>
-                <SelectItem value="health">Health Insurance</SelectItem>
-                <SelectItem value="auto">Auto Insurance</SelectItem>
-                <SelectItem value="home">Home Insurance</SelectItem>
-                <SelectItem value="disability">Disability Insurance</SelectItem>
-                <SelectItem value="liability">Liability Insurance</SelectItem>
-                <SelectItem value="business">Business Insurance</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label htmlFor={`policy-type-${index}`}>Policy Type *</Label>
+            <Controller
+              name="policy_type"
+              control={form.control}
+              rules={getValidation('policy_type')}
+              render={({ field, fieldState: { error } }) => (
+                <>
+                  <Select
+                    value={field.value || ""}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      handleChange("policy_type", value);
+                    }}
+                  >
+                    <SelectTrigger id={`policy-type-${index}`} className={error ? "border-red-500" : ""}>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="life">Life Insurance</SelectItem>
+                      <SelectItem value="health">Health Insurance</SelectItem>
+                      <SelectItem value="auto">Auto Insurance</SelectItem>
+                      <SelectItem value="home">Home Insurance</SelectItem>
+                      <SelectItem value="disability">Disability Insurance</SelectItem>
+                      <SelectItem value="liability">Liability Insurance</SelectItem>
+                      <SelectItem value="business">Business Insurance</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {error && <p className="text-red-500 text-xs">{error.message}</p>}
+                </>
+              )}
+            />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor={`provider-${index}`}>Provider/Insurer</Label>
-            <Input
-              id={`provider-${index}`}
-              placeholder="Insurance provider"
-              value={policy.provider || ""}
-              onChange={(e) => handleChange("provider", e.target.value)}
+            <Label htmlFor={`provider-${index}`}>Provider/Insurer *</Label>
+            <Controller
+              name="provider"
+              control={form.control}
+              rules={getValidation('provider')}
+              render={({ field, fieldState: { error } }) => (
+                <>
+                  <Input
+                    id={`provider-${index}`}
+                    placeholder="Insurance provider"
+                    value={field.value || ""}
+                    onChange={(e) => {
+                      field.onChange(e.target.value);
+                      handleChange("provider", e.target.value);
+                    }}
+                    className={error ? "border-red-500" : ""}
+                    required
+                  />
+                  {error && <p className="text-red-500 text-xs">{error.message}</p>}
+                </>
+              )}
             />
           </div>
 
@@ -206,26 +271,56 @@ export function PolicyFormGroup({ policy, onChange, onRemove, index }: PolicyFor
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor={`premium-${index}`}>Premium ($)</Label>
-            <Input
-              id={`premium-${index}`}
-              type="number"
-              placeholder="Premium amount"
-              value={policy.premium === null ? "" : policy.premium}
-              onChange={(e) => handleNumericChange("premium", e.target.value)}
-              {...getValidation('premium')}
+            <Label htmlFor={`premium-${index}`}>Premium ($) *</Label>
+            <Controller
+              name="premium"
+              control={form.control}
+              rules={getValidation('premium')}
+              render={({ field, fieldState: { error } }) => (
+                <>
+                  <Input
+                    id={`premium-${index}`}
+                    type="number"
+                    placeholder="Premium amount"
+                    value={field.value === null || field.value === undefined ? "" : field.value}
+                    onChange={(e) => {
+                      const value = e.target.value === "" ? null : parseFloat(e.target.value);
+                      field.onChange(value);
+                      handleNumericChange("premium", e.target.value);
+                    }}
+                    className={error ? "border-red-500" : ""}
+                    required
+                  />
+                  {error && <p className="text-red-500 text-xs">{error.message}</p>}
+                </>
+              )}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor={`value-${index}`}>Value/Sum Assured ($)</Label>
-            <Input
-              id={`value-${index}`}
-              type="number"
-              placeholder="Policy value"
-              value={policy.value === null ? "" : policy.value}
-              onChange={(e) => handleNumericChange("value", e.target.value)}
-              {...getValidation('value')}
+            <Label htmlFor={`value-${index}`}>Value/Sum Assured ($) *</Label>
+            <Controller
+              name="value"
+              control={form.control}
+              rules={getValidation('value')}
+              render={({ field, fieldState: { error } }) => (
+                <>
+                  <Input
+                    id={`value-${index}`}
+                    type="number"
+                    placeholder="Policy value"
+                    value={field.value === null || field.value === undefined ? "" : field.value}
+                    onChange={(e) => {
+                      const value = e.target.value === "" ? null : parseFloat(e.target.value);
+                      field.onChange(value);
+                      handleNumericChange("value", e.target.value);
+                    }}
+                    className={error ? "border-red-500" : ""}
+                    required
+                  />
+                  {error && <p className="text-red-500 text-xs">{error.message}</p>}
+                </>
+              )}
             />
           </div>
 
@@ -241,24 +336,52 @@ export function PolicyFormGroup({ policy, onChange, onRemove, index }: PolicyFor
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor={`start-date-${index}`}>Start Date</Label>
-            <Input
-              id={`start-date-${index}`}
-              type="date"
-              value={policy.start_date || ""}
-              onChange={(e) => handleChange("start_date", e.target.value)}
-              {...getValidation('start_date')}
+            <Label htmlFor={`start-date-${index}`}>Start Date *</Label>
+            <Controller
+              name="start_date"
+              control={form.control}
+              rules={getValidation('start_date')}
+              render={({ field, fieldState: { error } }) => (
+                <>
+                  <Input
+                    id={`start-date-${index}`}
+                    type="date"
+                    value={field.value || ""}
+                    onChange={(e) => {
+                      field.onChange(e.target.value);
+                      handleChange("start_date", e.target.value);
+                    }}
+                    className={error ? "border-red-500" : ""}
+                    required
+                  />
+                  {error && <p className="text-red-500 text-xs">{error.message}</p>}
+                </>
+              )}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor={`end-date-${index}`}>End Date</Label>
-            <Input
-              id={`end-date-${index}`}
-              type="date"
-              value={policy.end_date || ""}
-              onChange={(e) => handleChange("end_date", e.target.value)}
-              {...getValidation('end_date')}
+            <Label htmlFor={`end-date-${index}`}>End Date *</Label>
+            <Controller
+              name="end_date"
+              control={form.control}
+              rules={getValidation('end_date')}
+              render={({ field, fieldState: { error } }) => (
+                <>
+                  <Input
+                    id={`end-date-${index}`}
+                    type="date"
+                    value={field.value || ""}
+                    onChange={(e) => {
+                      field.onChange(e.target.value);
+                      handleChange("end_date", e.target.value);
+                    }}
+                    className={error ? "border-red-500" : ""}
+                    required
+                  />
+                  {error && <p className="text-red-500 text-xs">{error.message}</p>}
+                </>
+              )}
             />
           </div>
 
@@ -284,76 +407,149 @@ export function PolicyFormGroup({ policy, onChange, onRemove, index }: PolicyFor
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Label htmlFor={`payment-structure-${index}`}>Payment Structure Type</Label>
+                  <Label htmlFor={`payment-structure-${index}`}>Payment Structure Type *</Label>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Select how the premium payments are structured over time</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            <Select
-              value={policy.payment_structure_type}
-              onValueChange={(value) => handleChange("payment_structure_type", value)}
-            >
-              <SelectTrigger id={`payment-structure-${index}`}>
-                <SelectValue placeholder="Select payment structure" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="single_premium">Single Premium</SelectItem>
-                <SelectItem value="one_year_term">One-Year Term Policy</SelectItem>
-                <SelectItem value="regular_premium">Regular Premium Policy</SelectItem>
-                <SelectItem value="five_year_premium">5-Year Premium Payment</SelectItem>
-                <SelectItem value="ten_year_premium">10-Year Premium Payment</SelectItem>
-                <SelectItem value="lifetime_premium">Lifetime Premium Payment</SelectItem>
-              </SelectContent>
-            </Select>
+            <Controller
+              name="payment_structure_type"
+              control={form.control}
+              rules={getValidation('payment_structure_type')}
+              render={({ field, fieldState: { error } }) => (
+                <>
+                  <Select
+                    value={field.value}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      handleChange("payment_structure_type", value);
+                    }}
+                  >
+                    <SelectTrigger id={`payment-structure-${index}`} className={error ? "border-red-500" : ""}>
+                      <SelectValue placeholder="Select payment structure" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="single_premium">Single Premium</SelectItem>
+                      <SelectItem value="one_year_term">One-Year Term Policy</SelectItem>
+                      <SelectItem value="regular_premium">Regular Premium Policy</SelectItem>
+                      <SelectItem value="five_year_premium">5-Year Premium Payment</SelectItem>
+                      <SelectItem value="ten_year_premium">10-Year Premium Payment</SelectItem>
+                      <SelectItem value="lifetime_premium">Lifetime Premium Payment</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {error && <p className="text-red-500 text-xs">{error.message}</p>}
+                </>
+              )}
+            />
           </div>
 
           <div className="col-span-2 pt-2 border-t">
             <h5 className="font-medium mb-4">Commission Details</h5>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor={`commission-rate-${index}`}>First Year Commission Rate (%)</Label>
-                <Input
-                  id={`commission-rate-${index}`}
-                  type="number"
-                  placeholder="Commission rate"
-                  value={policy.commission_rate === null ? "" : policy.commission_rate}
-                  onChange={(e) => handleNumericChange("commission_rate", e.target.value)}
-                  {...getValidation('commission_rate')}
+                <Label htmlFor={`commission-rate-${index}`}>First Year Commission Rate (%) *</Label>
+                <Controller
+                  name="commission_rate"
+                  control={form.control}
+                  rules={getValidation('commission_rate')}
+                  render={({ field, fieldState: { error } }) => (
+                    <>
+                      <Input
+                        id={`commission-rate-${index}`}
+                        type="number"
+                        placeholder="Commission rate"
+                        value={field.value === null || field.value === undefined ? "" : field.value}
+                        onChange={(e) => {
+                          const value = e.target.value === "" ? null : parseFloat(e.target.value);
+                          field.onChange(value);
+                          handleNumericChange("commission_rate", e.target.value);
+                        }}
+                        className={error ? "border-red-500" : ""}
+                        required
+                      />
+                      {error && <p className="text-red-500 text-xs">{error.message}</p>}
+                    </>
+                  )}
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor={`ongoing-commission-rate-${index}`}>Ongoing Commission Rate (%)</Label>
-                <Input
-                  id={`ongoing-commission-rate-${index}`}
-                  type="number"
-                  placeholder="Ongoing commission rate"
-                  value={policy.ongoing_commission_rate === null ? "" : policy.ongoing_commission_rate}
-                  onChange={(e) => handleNumericChange("ongoing_commission_rate", e.target.value)}
+                <Controller
+                  name="ongoing_commission_rate"
+                  control={form.control}
+                  rules={getValidation('ongoing_commission_rate')}
+                  render={({ field, fieldState: { error } }) => (
+                    <>
+                      <Input
+                        id={`ongoing-commission-rate-${index}`}
+                        type="number"
+                        placeholder="Ongoing commission rate"
+                        value={field.value === null || field.value === undefined ? "" : field.value}
+                        onChange={(e) => {
+                          const value = e.target.value === "" ? null : parseFloat(e.target.value);
+                          field.onChange(value);
+                          handleNumericChange("ongoing_commission_rate", e.target.value);
+                        }}
+                        className={error ? "border-red-500" : ""}
+                      />
+                      {error && <p className="text-red-500 text-xs">{error.message}</p>}
+                    </>
+                  )}
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor={`commission-duration-${index}`}>Commission Duration (Years)</Label>
-                <Input
-                  id={`commission-duration-${index}`}
-                  type="number" 
-                  placeholder="Duration in years"
-                  value={policy.commission_duration === null ? "" : policy.commission_duration}
-                  onChange={(e) => handleNumericChange("commission_duration", e.target.value)}
+                <Controller
+                  name="commission_duration"
+                  control={form.control}
+                  rules={getValidation('commission_duration')}
+                  render={({ field, fieldState: { error } }) => (
+                    <>
+                      <Input
+                        id={`commission-duration-${index}`}
+                        type="number" 
+                        placeholder="Duration in years"
+                        value={field.value === null || field.value === undefined ? "" : field.value}
+                        onChange={(e) => {
+                          const value = e.target.value === "" ? null : parseInt(e.target.value);
+                          field.onChange(value);
+                          handleNumericChange("commission_duration", e.target.value);
+                        }}
+                        className={error ? "border-red-500" : ""}
+                      />
+                      {error && <p className="text-red-500 text-xs">{error.message}</p>}
+                    </>
+                  )}
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor={`policy-duration-${index}`}>Policy Duration (Years)</Label>
-                <Input
-                  id={`policy-duration-${index}`}
-                  type="number"
-                  placeholder="Duration in years"
-                  value={policy.policy_duration === null ? "" : policy.policy_duration}
-                  onChange={(e) => handleNumericChange("policy_duration", e.target.value)}
+                <Controller
+                  name="policy_duration"
+                  control={form.control}
+                  rules={getValidation('policy_duration')}
+                  render={({ field, fieldState: { error } }) => (
+                    <>
+                      <Input
+                        id={`policy-duration-${index}`}
+                        type="number"
+                        placeholder="Duration in years"
+                        value={field.value === null || field.value === undefined ? "" : field.value}
+                        onChange={(e) => {
+                          const value = e.target.value === "" ? null : parseInt(e.target.value);
+                          field.onChange(value);
+                          handleNumericChange("policy_duration", e.target.value);
+                        }}
+                        className={error ? "border-red-500" : ""}
+                      />
+                      {error && <p className="text-red-500 text-xs">{error.message}</p>}
+                    </>
+                  )}
                 />
               </div>
 

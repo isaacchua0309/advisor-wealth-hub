@@ -32,6 +32,8 @@ export function usePolicyForm(form: UseFormReturn<FormType>) {
   const watchEndDate = form.watch('end_date');
   const watchPaymentStructure = form.watch('payment_structure_type');
   const watchStatus = form.watch('status');
+  const watchPolicyDuration = form.watch('policy_duration');
+  const watchCommissionDuration = form.watch('commission_duration');
 
   // Auto-calculate first year commission
   useEffect(() => {
@@ -39,7 +41,7 @@ export function usePolicyForm(form: UseFormReturn<FormType>) {
       const totalCommission = watchPremium * (watchCommissionRate / 100);
       form.setValue('first_year_commission', totalCommission, { shouldValidate: true });
     }
-  }, [watchPremium, watchCommissionRate]);
+  }, [watchPremium, watchCommissionRate, form]);
 
   // Auto-calculate policy duration
   useEffect(() => {
@@ -52,7 +54,7 @@ export function usePolicyForm(form: UseFormReturn<FormType>) {
         form.setValue('policy_duration', duration, { shouldValidate: true });
       }
     }
-  }, [watchStartDate, watchEndDate]);
+  }, [watchStartDate, watchEndDate, form]);
 
   // Auto-calculate ongoing commission based on payment structure
   useEffect(() => {
@@ -81,7 +83,19 @@ export function usePolicyForm(form: UseFormReturn<FormType>) {
       
       form.setValue('annual_ongoing_commission', ongoingCommission, { shouldValidate: true });
     }
-  }, [watchPremium, watchCommissionRate, watchPaymentStructure, form.getValues('first_year_commission'), form.getValues('policy_duration')]);
+  }, [watchPremium, watchCommissionRate, watchPaymentStructure, form]);
+
+  // Validate commission duration against policy duration
+  useEffect(() => {
+    if (watchCommissionDuration && watchPolicyDuration && watchCommissionDuration > watchPolicyDuration) {
+      form.setError('commission_duration', {
+        type: 'manual',
+        message: 'Commission duration cannot exceed policy duration'
+      });
+    } else if (form.formState.errors.commission_duration?.type === 'manual') {
+      form.clearErrors('commission_duration');
+    }
+  }, [watchCommissionDuration, watchPolicyDuration, form]);
 
   const validatePolicyLimits = (value: number | undefined, type: 'premium' | 'value') => {
     if (!value || !watchPolicyType) return true;
@@ -102,9 +116,19 @@ export function usePolicyForm(form: UseFormReturn<FormType>) {
 
   const getValidation = (fieldName: keyof FormType) => {
     const baseValidation = {
+      policy_name: {
+        required: 'Policy name is required',
+        minLength: { value: 2, message: 'Policy name must be at least 2 characters' }
+      },
+      provider: {
+        required: 'Provider/Insurer is required'
+      },
+      policy_type: {
+        required: 'Policy type is required'
+      },
       premium: {
         required: 'Premium is required',
-        min: { value: 0, message: 'Premium must be greater than 0' },
+        min: { value: 0.01, message: 'Premium must be greater than 0' },
         validate: {
           withinLimits: (value: number) => 
             validatePolicyLimits(value, 'premium') || 
@@ -112,7 +136,8 @@ export function usePolicyForm(form: UseFormReturn<FormType>) {
         }
       },
       value: {
-        min: { value: 0, message: 'Value must be greater than 0' },
+        required: 'Value is required',
+        min: { value: 0.01, message: 'Value must be greater than 0' },
         validate: {
           withinLimits: (value: number) => 
             validatePolicyLimits(value, 'value') || 
@@ -124,21 +149,56 @@ export function usePolicyForm(form: UseFormReturn<FormType>) {
         min: { value: 0, message: 'Commission rate must be between 0 and 100' },
         max: { value: 100, message: 'Commission rate must be between 0 and 100' }
       },
+      ongoing_commission_rate: {
+        min: { value: 0, message: 'Ongoing commission rate must be between 0 and 100' },
+        max: { value: 100, message: 'Ongoing commission rate must be between 0 and 100' }
+      },
       policy_duration: {
-        min: { value: 1, message: 'Policy duration must be between 1 and 30 years' },
-        max: { value: 30, message: 'Policy duration must be between 1 and 30 years' }
+        min: { value: 1, message: 'Policy duration must be at least 1 year' },
+        max: { value: 30, message: 'Policy duration must be a maximum of 30 years' },
+        validate: {
+          matchesDates: (value: number) => {
+            if (!watchStartDate || !watchEndDate) return true;
+            const startDate = new Date(watchStartDate);
+            const endDate = new Date(watchEndDate);
+            const calculatedDuration = differenceInYears(endDate, startDate);
+            return value === calculatedDuration || 
+              'Policy duration must match the difference between start and end dates';
+          }
+        }
+      },
+      commission_duration: {
+        min: { value: 1, message: 'Commission duration must be at least 1 year' },
+        validate: {
+          notExceedingPolicy: (value: number) => {
+            if (!watchPolicyDuration) return true;
+            return value <= watchPolicyDuration || 
+              'Commission duration cannot exceed policy duration';
+          }
+        }
       },
       start_date: {
-        required: 'Start date is required'
+        required: 'Start date is required',
+        validate: {
+          validDate: (value: string) => {
+            return !isNaN(Date.parse(value)) || 'Please enter a valid date';
+          }
+        }
       },
       end_date: {
         required: 'End date is required',
         validate: {
+          validDate: (value: string) => {
+            return !isNaN(Date.parse(value)) || 'Please enter a valid date';
+          },
           afterStart: (value: string) => {
             if (!watchStartDate || !value) return true;
             return new Date(value) > new Date(watchStartDate) || 'End date must be after start date';
           }
         }
+      },
+      payment_structure_type: {
+        required: 'Payment structure is required'
       }
     };
 
