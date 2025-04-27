@@ -66,7 +66,7 @@
     --ring: 212.7 26.8% 83.9%;
   }
   
-  /* Apply stronger global styles to prevent horizontal scrolling */
+  /* Global settings to prevent horizontal scrolling */
   html, body {
     overflow-x: hidden;
     max-width: 100vw;
@@ -126,5 +126,25 @@
   
   .policy-list-section {
     @apply w-full;
+  }
+  
+  /* Chart container with controlled scrolling */
+  .chart-container {
+    @apply overflow-x-auto relative border-0;
+    scrollbar-width: thin;
+    scrollbar-color: #ccc transparent;
+  }
+  
+  .chart-container::-webkit-scrollbar {
+    height: 6px;
+  }
+  
+  .chart-container::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .chart-container::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 20px;
   }
 }

@@ -77,9 +77,17 @@ export default function CommissionProjectionChart({
       window.removeEventListener('resize', checkIfMobile);
     };
   }, []);
+
+  // Custom style function for bar fills
+  const getBarFill = (entry: any) => {
+    if (entry.isSelected) {
+      return "#047857";
+    }
+    return "var(--color-commission)";
+  };
   
   return (
-    <Card className="mb-6">
+    <Card className="mb-10">
       <CardHeader className="pb-2">
         <CardTitle className="text-xl">Commission Projection</CardTitle>
         <CardDescription className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4 sm:items-center">
@@ -94,50 +102,52 @@ export default function CommissionProjectionChart({
         </CardDescription>
       </CardHeader>
       <CardContent className="p-0 sm:p-4">
-        <div className="h-[250px] sm:h-[300px] w-full">
-          <ChartContainer config={chartConfig}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart 
-                data={chartData} 
-                margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
-                onClick={onYearSelect ? handleBarClick : undefined}
-              >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis 
-                  dataKey="year"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 10 }}
-                  interval={isMobile ? 1 : 0}
-                />
-                <YAxis 
-                  axisLine={false}
-                  tickLine={false}
-                  tickFormatter={tooltipFormatter}
-                  domain={[0, yAxisMax]}
-                  tick={{ fontSize: 10 }}
-                  width={60}
-                />
-                <Tooltip content={<ChartTooltipContent formatter={tooltipFormatter} />} />
-                <Legend />
-                <Bar 
-                  dataKey="commission" 
-                  name="Annual Commission" 
-                  fillOpacity={0.9}
-                  className="cursor-pointer"
-                  radius={[4, 4, 0, 0]}
-                  maxBarSize={isMobile ? 20 : (commissionData.length > 6 ? 40 : 60)}
-                  cursor={onYearSelect ? "pointer" : undefined}
-                  fill="var(--color-commission)"
-                  style={(entry) => {
-                    return entry.isSelected 
-                      ? { fill: "#047857" } 
-                      : { fill: "var(--color-commission)" };
-                  }}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartContainer>
+        <div className="chart-container w-full overflow-x-auto">
+          <div className="h-[250px] sm:h-[300px] min-w-[500px]">
+            <ChartContainer config={chartConfig}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart 
+                  data={chartData} 
+                  margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
+                  onClick={onYearSelect ? handleBarClick : undefined}
+                >
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis 
+                    dataKey="year"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 10 }}
+                    interval={isMobile ? 1 : 0}
+                  />
+                  <YAxis 
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={tooltipFormatter}
+                    domain={[0, yAxisMax]}
+                    tick={{ fontSize: 10 }}
+                    width={60}
+                  />
+                  <Tooltip content={<ChartTooltipContent formatter={tooltipFormatter} />} />
+                  <Legend />
+                  <Bar 
+                    dataKey="commission" 
+                    name="Annual Commission" 
+                    fillOpacity={0.9}
+                    className="cursor-pointer"
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={isMobile ? 20 : (commissionData.length > 6 ? 40 : 60)}
+                    cursor={onYearSelect ? "pointer" : undefined}
+                    fill="var(--color-commission)"
+                    style={{
+                      cursor: onYearSelect ? "pointer" : "default",
+                    }}
+                    // Use fill function to conditionally apply colors
+                    fill={(entry) => getBarFill(entry)}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          </div>
         </div>
         {onYearSelect && (
           <div className="text-center text-xs text-muted-foreground mt-2 mb-4">

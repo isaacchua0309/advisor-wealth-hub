@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useClients } from "@/hooks/useClients";
 import { Policy } from "@/types/policy";
@@ -254,8 +255,8 @@ export default function Policies() {
   };
 
   return (
-    <div className="w-full max-w-full">
-      <div className="flex items-center justify-between mb-8">
+    <div className="w-full max-w-full overflow-hidden px-1">
+      <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Policies</h2>
           <p className="text-muted-foreground">
@@ -264,13 +265,13 @@ export default function Policies() {
         </div>
       </div>
       
-      <div className="mb-10">
+      <div className="mb-8">
         {!isLoadingPolicies && policies && (
           <PolicyKPICards policies={filteredPolicies} />
         )}
       </div>
       
-      <div className="mb-10">
+      <div className="mb-8">
         {!isLoadingPolicies && policies && (
           <CommissionProjectionChart 
             policies={filteredPolicies}
@@ -281,7 +282,7 @@ export default function Policies() {
         )}
       </div>
       
-      <Card className="mb-10 p-6 bg-slate-50/50 border-slate-100">
+      <Card className="mb-8 p-4 md:p-6 bg-slate-50/50 border-slate-100">
         <PolicyFilters 
           filters={filters} 
           setFilters={setFilters}
@@ -296,7 +297,7 @@ export default function Policies() {
         />
       </Card>
       
-      <div className="w-full max-w-full mb-10 overflow-hidden">
+      <div className="w-full max-w-full mb-8 overflow-hidden">
         <PolicyListContainer 
           isLoadingPolicies={isLoadingPolicies}
           policies={policies}
