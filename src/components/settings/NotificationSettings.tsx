@@ -26,6 +26,15 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+// Define the shape of notification settings
+interface NotificationSettingsData {
+  taskReminders: boolean;
+  policyRenewals: boolean;
+  commissionUpdates: boolean;
+  pipelineChanges: boolean;
+  newClients: boolean;
+}
+
 const notificationFormSchema = z.object({
   taskReminders: z.boolean(),
   policyRenewals: z.boolean(),
@@ -35,6 +44,17 @@ const notificationFormSchema = z.object({
 });
 
 type NotificationFormValues = z.infer<typeof notificationFormSchema>;
+
+// Helper function to safely parse notification settings with defaults
+function parseNotificationSettings(data: any): NotificationFormValues {
+  return {
+    taskReminders: data?.taskReminders ?? true,
+    policyRenewals: data?.policyRenewals ?? true,
+    commissionUpdates: data?.commissionUpdates ?? true,
+    pipelineChanges: data?.pipelineChanges ?? false,
+    newClients: data?.newClients ?? true,
+  };
+}
 
 export function NotificationSettings() {
   const { toast } = useToast();
@@ -67,13 +87,9 @@ export function NotificationSettings() {
         if (error) throw error;
         
         if (data && data.notification_settings) {
-          notificationForm.reset({
-            taskReminders: data.notification_settings.taskReminders ?? true,
-            policyRenewals: data.notification_settings.policyRenewals ?? true,
-            commissionUpdates: data.notification_settings.commissionUpdates ?? true,
-            pipelineChanges: data.notification_settings.pipelineChanges ?? false,
-            newClients: data.notification_settings.newClients ?? true,
-          });
+          // Safely parse the notification settings with defaults
+          const parsedSettings = parseNotificationSettings(data.notification_settings);
+          notificationForm.reset(parsedSettings);
         }
       } catch (error) {
         console.error("Error fetching notification settings:", error);
@@ -81,7 +97,7 @@ export function NotificationSettings() {
     };
     
     fetchNotificationSettings();
-  }, [user]);
+  }, [user, notificationForm]);
 
   async function onSubmit(data: NotificationFormValues) {
     if (!user) return;
