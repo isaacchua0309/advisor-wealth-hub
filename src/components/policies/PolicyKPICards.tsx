@@ -14,15 +14,57 @@ export default function PolicyKPICards({ policies }: PolicyKPICardsProps) {
   
   const totalActivePoliciesCount = activePolicies.length;
   
-  const totalFirstYearCommission = activePolicies.reduce(
-    (sum, policy) => sum + (policy.first_year_commission || 0), 
-    0
-  );
+  // Calculate total commission collected so far
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth();
+  const currentDay = currentDate.getDate();
   
-  const totalOngoingCommission = activePolicies.reduce(
-    (sum, policy) => sum + (policy.annual_ongoing_commission || 0), 
-    0
-  );
+  let totalCollectedCommission = 0;
+  let thisYearCommission = 0;
+  
+  activePolicies.forEach(policy => {
+    if (policy.start_date) {
+      const startDate = new Date(policy.start_date);
+      const startYear = startDate.getFullYear();
+      const yearsPassed = currentYear - startYear;
+      
+      // Check if first year commission should be included in total collected
+      if (yearsPassed >= 0) {
+        // Check if we've passed the anniversary date this year
+        const anniversaryDatePassed = 
+          yearsPassed > 0 || 
+          (currentMonth > startDate.getMonth() || 
+           (currentMonth === startDate.getMonth() && currentDay >= startDate.getDate()));
+        
+        if (anniversaryDatePassed) {
+          totalCollectedCommission += policy.first_year_commission || 0;
+          
+          // Add to this year's commission if the policy started this year
+          if (startYear === currentYear) {
+            thisYearCommission += policy.first_year_commission || 0;
+          }
+        }
+      }
+      
+      // Calculate ongoing commissions for years after the first
+      if (yearsPassed > 0 && policy.annual_ongoing_commission) {
+        // For total collected: all full years of ongoing commission
+        const fullYearsOfOngoing = Math.min(
+          yearsPassed, 
+          policy.commission_duration ? policy.commission_duration - 1 : 0
+        );
+        
+        totalCollectedCommission += fullYearsOfOngoing * (policy.annual_ongoing_commission || 0);
+        
+        // For this year's commission: only include if we've passed the anniversary date this year
+        const anniversaryDateThisYear = new Date(currentYear, startDate.getMonth(), startDate.getDate());
+        if (currentDate >= anniversaryDateThisYear && yearsPassed <= (policy.commission_duration || 0)) {
+          thisYearCommission += policy.annual_ongoing_commission || 0;
+        }
+      }
+    }
+  });
   
   const policiesRenewingSoon = policies.filter(policy => 
     isRenewingSoon(policy, 90)
@@ -33,7 +75,6 @@ export default function PolicyKPICards({ policies }: PolicyKPICardsProps) {
     : null;
     
   // Get next year's projected commission
-  const currentYear = new Date().getFullYear();
   const commissionProjection = calculateYearlyCommissions(policies, currentYear, 2);
   const nextYearCommission = commissionProjection.length > 1 ? commissionProjection[1].amount : 0;
 
@@ -53,28 +94,28 @@ export default function PolicyKPICards({ policies }: PolicyKPICardsProps) {
       
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">First-Year Commission</CardTitle>
+          <CardTitle className="text-sm font-medium">Total Commission Collected</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-green-600">
-            {formatCurrency(totalFirstYearCommission)}
+            {formatCurrency(totalCollectedCommission)}
           </div>
           <p className="text-xs text-muted-foreground">
-            Total from all active policies
+            Total commission collected to date
           </p>
         </CardContent>
       </Card>
       
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Annual Ongoing Commission</CardTitle>
+          <CardTitle className="text-sm font-medium">This Year's Commission</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-blue-600">
-            {formatCurrency(totalOngoingCommission)}
+            {formatCurrency(thisYearCommission)}
           </div>
           <p className="text-xs text-muted-foreground">
-            Yearly recurring revenue
+            Commission earned in {currentYear}
           </p>
         </CardContent>
       </Card>

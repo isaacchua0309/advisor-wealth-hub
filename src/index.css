@@ -130,9 +130,12 @@
   
   /* Chart container with controlled scrolling */
   .chart-container {
-    @apply overflow-x-auto relative border-0;
+    @apply overflow-x-auto relative border-0 overflow-y-hidden;
     scrollbar-width: thin;
     scrollbar-color: #ccc transparent;
+    min-height: 250px;
+    max-height: 350px;
+    margin-bottom: 1.5rem;
   }
   
   .chart-container::-webkit-scrollbar {
@@ -146,5 +149,20 @@
   .chart-container::-webkit-scrollbar-thumb {
     background-color: #ccc;
     border-radius: 20px;
+  }
+  
+  /* Ensure chart doesn't overflow vertically */
+  .recharts-wrapper {
+    @apply !overflow-visible;
+  }
+  
+  /* Add spacing between page sections */
+  .page-section {
+    @apply mb-8;
+  }
+  
+  /* Ensure consistent spacing between major components */
+  .section-spacing {
+    @apply my-8;
   }
 }

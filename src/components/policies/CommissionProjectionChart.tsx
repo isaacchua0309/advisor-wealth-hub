@@ -102,7 +102,7 @@ export default function CommissionProjectionChart({
         </CardDescription>
       </CardHeader>
       <CardContent className="p-0 sm:p-4">
-        <div className="chart-container w-full overflow-x-auto">
+        <div className="chart-container w-full overflow-x-auto overflow-y-hidden">
           <div className="h-[250px] sm:h-[300px] min-w-[500px]">
             <ChartContainer config={chartConfig}>
               <ResponsiveContainer width="100%" height="100%">
@@ -137,11 +137,9 @@ export default function CommissionProjectionChart({
                     radius={[4, 4, 0, 0]}
                     maxBarSize={isMobile ? 20 : (commissionData.length > 6 ? 40 : 60)}
                     cursor={onYearSelect ? "pointer" : undefined}
-                    fill="var(--color-commission)"
                     style={{
                       cursor: onYearSelect ? "pointer" : "default",
                     }}
-                    // Use fill function to conditionally apply colors
                     fill={(entry) => getBarFill(entry)}
                   />
                 </BarChart>

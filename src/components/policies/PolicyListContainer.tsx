@@ -41,14 +41,16 @@ export default function PolicyListContainer({
           </TabsList>
           
           <TabsContent value="table" className="w-full">
-            <div className="responsive-table-container w-full overflow-x-auto">
-              <PoliciesTable 
-                policies={filteredPolicies}
-                sortBy={sortBy}
-                sortDirection={sortDirection}
-                onSort={onSort}
-              />
-            </div>
+            <ScrollArea className="w-full border rounded-md" type="always">
+              <div className="min-w-[800px]">
+                <PoliciesTable 
+                  policies={filteredPolicies}
+                  sortBy={sortBy}
+                  sortDirection={sortDirection}
+                  onSort={onSort}
+                />
+              </div>
+            </ScrollArea>
           </TabsContent>
           
           <TabsContent value="compact" className="w-full">
